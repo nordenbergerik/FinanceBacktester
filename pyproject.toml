@@ -1,0 +1,29 @@
+[project]
+name = "backtester"
+version = "0.1.0"
+description = "A modular backtesting engine with CLI and future API/frontend layers."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.26",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+storage = ["sqlalchemy>=2.0"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4", "mypy>=1.10"]
+
+[project.scripts]
+run-backtest = "cli.run_backtest:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["engine*", "api*", "cli*", "storage*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
