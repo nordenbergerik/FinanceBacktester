@@ -16,8 +16,8 @@ class BacktestResult:
     """Stores backtest results including ROI curve, price curve, dates, metrics, and raw data."""
     roi_curve: Figure
     price_curve: Figure
+    return_buyandhold: float
     dates: date
-    # benchmark_curve: list[float]
     metrics: dict[str, Any]
     df: pd.DataFrame
     
@@ -70,6 +70,11 @@ class Backtest:
         # 5. Calculate daily percentage returns for your output
         returns = strategy_returns.to_numpy() * 100
 
+        # Generate buy and hold return
+        starting_price = closing_prices.iloc[0]
+        final_price = closing_prices.iloc[-1]
+        return_buyandhold = ((final_price / starting_price) - 1) * 100
+
         # 6. Generate plots
         roi_curve = px.line(
             x=df.index,
@@ -87,7 +92,8 @@ class Backtest:
 
         return BacktestResult(
             roi_curve=roi_curve, 
-            price_curve=price_curve, 
+            price_curve=price_curve,
+            return_buyandhold=return_buyandhold,
             dates=df.index, 
             metrics=None, 
             df=df
