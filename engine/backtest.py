@@ -1,38 +1,39 @@
 from typing import Any
 
 import numpy as np
-import pandas as pd
+
+from pandas import DataFrame
 
 from dataclasses import dataclass
 from engine.strategy.base import Strategy
 from engine.data.loader import DataLoader
 from datetime import date, datetime
+from engine.metrics_calculator import MetricsCalculator
 
 import plotly.express as px
 from plotly.graph_objs import Figure
 
 @dataclass
 class BacktestResult:
-    """Stores backtest results including ROI curve, price curve, dates, metrics, and raw data."""
-    roi_curve: Figure
-    price_curve: Figure
+    """Stores backtest results including ROI curve, price curve, market curve, dates, metrics, and raw data."""
+    plot: Figure
     return_buyandhold: float
     dates: date
     metrics: dict[str, Any]
-    df: pd.DataFrame
+    df: DataFrame
     
 
 class Backtest:
     strategy: Strategy
     symbol: str
     loader: DataLoader
-    start_date: str | date | datetime 
-    end_date: str | date | datetime
+    start_date: date | datetime 
+    end_date: date | datetime
     cash: float
     portfolio_value: list[float]
     shares: int
 
-    def __init__(self, strategy: Strategy, symbol: str, start_date: date | datetime, end_date: date | datetime, cash: float):
+    def __init__(self, strategy: Strategy, symbol: str, start_date: str | date | datetime, end_date: str | date | datetime, cash: float):
         self.strategy = strategy
         self.symbol = symbol
         self.loader = DataLoader()
@@ -75,26 +76,85 @@ class Backtest:
         final_price = closing_prices.iloc[-1]
         return_buyandhold = ((final_price / starting_price) - 1) * 100
 
-        # 6. Generate plots
-        roi_curve = px.line(
+        # Generate market returns 
+        market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
+        market_closing_prices = market_df['close']
+        market_returns = market_closing_prices.pct_change().fillna(0)
+        market_returns_log = np.log(1 + market_returns)
+        market_returns_roi = (np.exp(market_returns_log.cumsum()) - 1) * 100
+        
+
+
+        # Generate plots
+        combined_fig = px.line(
+            title="ROI, Price, and Market Comparison"
+        )
+
+        # roi of strategy
+        combined_fig.add_scatter(
             x=df.index,
             y=roi,
-            title="Return on Investment (ROI)",
-            labels={"x": "Date", "y": "ROI (%)"},
+            name="ROI (%)",
+            line=dict(color="blue")
         )
-        price_curve = px.line(
-            df,
-            x=df.index,
-            y="close",
-            title="Price Curve",
-            labels={"close": "Price ($)", "index": "Date"},
+        # market returns
+        combined_fig.add_scatter(
+            x=market_df.index,
+            y=market_returns_roi,
+            name="S&P500",
+            line=dict(color="red")
+        )
+        # combined_fig.add_scatter(
+        #     x=df.index,
+        #     y=df['close'],
+        #     name="Price ($)",
+        #     line=dict(color="green")
+        # )
+
+        # market_curve = px.line(
+        #     x=market_df.index,
+        #     y=market_returns_roi,
+        #     title="S&P500",
+        #     labels={"close": "Price ($)", "index": "Date"}
+        # )
+
+        metrics = self.calculate_metrics(
+            daily_returns=strategy_returns,
+            market_returns=market_returns,
+            start_date=self.start_date,
+            end_date=self.end_date,
         )
 
         return BacktestResult(
-            roi_curve=roi_curve, 
-            price_curve=price_curve,
+            plot=combined_fig,
             return_buyandhold=return_buyandhold,
-            dates=df.index, 
-            metrics=None, 
-            df=df
+            dates=df.index,
+            metrics=metrics,
+            df=df,
         )
+
+    def calculate_metrics(self, daily_returns,
+                          market_returns, 
+                          start_date: str | date | datetime, 
+                          end_date: str | date | datetime,) -> dict[str, Any]:
+        metrics = {}
+        metrics["cagr"] = MetricsCalculator.cagr(
+            daily_returns=daily_returns,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        metrics["sharpe"] = MetricsCalculator.sharpe(
+            daily_returns=daily_returns,
+            risk_free_rate=0.0
+        )
+        metrics["max_drawdown"] = MetricsCalculator.max_drawdown(daily_returns=daily_returns)
+        metrics["alpha"] = MetricsCalculator.alpha(
+            asset_returns=daily_returns,
+            market_returns=market_returns,
+            risk_free_rate=0.0
+        )
+        metrics["beta"] = MetricsCalculator.beta(
+            asset_returns=daily_returns,
+            market_returns=market_returns
+        )
+        return metrics

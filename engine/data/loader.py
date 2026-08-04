@@ -41,7 +41,7 @@ class DataLoader:
         return df
     
     #-- Sources --------------------------------------------------------------------------------------------------------
-    def _load_from_yfinance(self, symbol: str, start: str | date | datetime, end: str| date | datetime) -> pd.DataFrame:
+    def _load_from_yfinance(self, symbol: str, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
         raw = yf.download(tickers=symbol, start=start, end=end)
         if raw.empty:
             raise DataLoaderError(f"No data returned for {symbol} between {start} and {end}")
@@ -103,10 +103,11 @@ class DataLoader:
                     volume=row["volume"],
                 )
             except ValueError as e:
-                errors.append(e)
-        if errors:
-            preview = "\n".join(errors[:5])
-            more = f"\n...and {len(errors) - 5} more" if len(errors) > 5 else ""
-            raise DataLoaderError(
-                f"{symbol}: {len(errors)} invalid bar(s) found:\n{preview}{more}"
-            )
+                df.drop(labels=timestamp)
+        #         errors.append(str(e))
+        # if errors:
+        #     preview = "\n".join(errors[:5])
+        #     more = f"\n...and {len(errors) - 5} more" if len(errors) > 5 else ""
+        #     raise DataLoaderError(
+        #         f"{symbol}: {len(errors)} invalid bar(s) found:\n{preview}{more}"
+        #     )
