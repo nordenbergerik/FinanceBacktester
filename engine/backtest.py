@@ -111,13 +111,6 @@ class Backtest:
         #     line=dict(color="green")
         # )
 
-        # market_curve = px.line(
-        #     x=market_df.index,
-        #     y=market_returns_roi,
-        #     title="S&P500",
-        #     labels={"close": "Price ($)", "index": "Date"}
-        # )
-
         metrics = self.calculate_metrics(
             daily_returns=strategy_returns,
             market_returns=market_returns,
@@ -158,3 +151,30 @@ class Backtest:
             market_returns=market_returns
         )
         return metrics
+
+    def set_start_date(self, start_date: str | date | datetime):
+        if isinstance(start_date, str):
+            if Backtest.__validate_date_format__(start_date):
+                self.start_date = start_date
+            else:
+                raise ValueError("Date string must be in YYYY-MM-DD format")
+        else:
+            self.start_date = start_date
+
+    def set_end_date(self, end_date: str | date | datetime):
+        if isinstance(end_date, str):
+            if Backtest.__validate_date_format__(end_date):
+                self.end_date = end_date
+            else:
+                raise ValueError("Date string must be in YYYY-MM-DD format")
+        else:
+            self.end_date = end_date
+
+    @staticmethod
+    def __validate_date_format__(date: str) ->  bool:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+            return True
+        except Exception as e:
+            print(f"Error parsing string to date: {e}")
+            return False

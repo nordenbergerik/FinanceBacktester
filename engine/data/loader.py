@@ -104,10 +104,4 @@ class DataLoader:
                 )
             except ValueError as e:
                 df.drop(labels=timestamp)
-        #         errors.append(str(e))
-        # if errors:
-        #     preview = "\n".join(errors[:5])
-        #     more = f"\n...and {len(errors) - 5} more" if len(errors) > 5 else ""
-        #     raise DataLoaderError(
-        #         f"{symbol}: {len(errors)} invalid bar(s) found:\n{preview}{more}"
-        #     )
+                raise DataLoaderError("invalid bar")
