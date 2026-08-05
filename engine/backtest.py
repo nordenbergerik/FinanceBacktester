@@ -34,6 +34,15 @@ class Backtest:
     shares: int
 
     def __init__(self, strategy: Strategy, symbol: str, start_date: str | date | datetime, end_date: str | date | datetime, cash: float):
+        """Initialize a backtest with a trading strategy, symbol, date range, and starting capital.
+
+        Args:
+            strategy: Trading strategy used to generate buy/sell signals.
+            symbol: Security ticker to backtest.
+            start_date: Start date of the backtest, either date-like or YYYY-MM-DD string.
+            end_date: End date of the backtest, either date-like or YYYY-MM-DD string.
+            cash: Initial cash amount at the start of the backtest.
+        """
         self.strategy = strategy
         self.symbol = symbol
         self.loader = DataLoader()
@@ -44,72 +53,63 @@ class Backtest:
         self.shares = 0
     
     def run(self) -> BacktestResult:
-        """Runs the backtest and returns results."""
+        """Run the backtest and produce a result object with performance data.
+
+        This method loads market data, applies the strategy signals, computes strategy returns,
+        compares performance to the market, and builds a plot for visualization.
+        """
         df = self.loader.load(symbol=self.symbol, start=self.start_date, end=self.end_date)
         signals = self.strategy.generate_signals(df)
         closing_prices = df['close']
 
-        # 1. Forward-fill the signals to know your current market position at any given time
-        # If your strategy outputs a signal only on the day of the trade, we need to track the "holding" state.
-        # Let's assume 'position' is 1 when holding asset, 0 when in cash.
-        # We can compute this by tracking the changes or accumulating the signals:
+        # Build a running position series (0 = cash, 1 = long) from raw trading signals.
         positions = signals.cumsum().ffill().fillna(0)
 
-        # 2. Calculate daily asset returns
+        # Compute daily asset returns from the close prices.
         price_returns = closing_prices.pct_change().fillna(0)
 
-        # 3. Your daily strategy return is your position from the *previous* day multiplied by today's asset return
+        # The strategy return uses the prior day's position, because today's return is realized
+        # only when the position was held at the start of the day.
         strategy_returns = positions.shift(1).fillna(0) * price_returns
 
-        # 4. Reconstruct the portfolio value curve starting from your initial cash
-        # (Assuming you put all your cash into the asset when long)
+        # Reconstruct portfolio equity growth from the strategy returns.
         initial_value = self.cash
         portfolio_log_returns = np.log(1 + strategy_returns)
         self.portfolio_value = initial_value * np.exp(portfolio_log_returns.cumsum())
         roi = (np.exp(portfolio_log_returns.cumsum()) - 1) * 100
 
-        # 5. Calculate daily percentage returns for your output
+        # Convert daily strategy returns to percentage values for metric calculations.
         returns = strategy_returns.to_numpy() * 100
 
-        # Generate buy and hold return
+        # Calculate the buy-and-hold return for the same period.
         starting_price = closing_prices.iloc[0]
         final_price = closing_prices.iloc[-1]
         return_buyandhold = ((final_price / starting_price) - 1) * 100
 
-        # Generate market returns 
+        # Load market benchmark data and compute its cumulative return.
         market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
         market_closing_prices = market_df['close']
         market_returns = market_closing_prices.pct_change().fillna(0)
         market_returns_log = np.log(1 + market_returns)
         market_returns_roi = (np.exp(market_returns_log.cumsum()) - 1) * 100
         
-
-
-        # Generate plots
+        # Build a combined line chart for the strategy ROI and market benchmark.
         combined_fig = px.line(
             title="ROI, Price, and Market Comparison"
         )
 
-        # roi of strategy
         combined_fig.add_scatter(
             x=df.index,
             y=roi,
             name="ROI (%)",
             line=dict(color="blue")
         )
-        # market returns
         combined_fig.add_scatter(
             x=market_df.index,
             y=market_returns_roi,
             name="S&P500",
             line=dict(color="red")
         )
-        # combined_fig.add_scatter(
-        #     x=df.index,
-        #     y=df['close'],
-        #     name="Price ($)",
-        #     line=dict(color="green")
-        # )
 
         metrics = self.calculate_metrics(
             daily_returns=strategy_returns,
@@ -130,6 +130,7 @@ class Backtest:
                           market_returns, 
                           start_date: str | date | datetime, 
                           end_date: str | date | datetime,) -> dict[str, Any]:
+        """Compute standard performance metrics from strategy and benchmark returns."""
         metrics = {}
         metrics["cagr"] = MetricsCalculator.cagr(
             daily_returns=daily_returns,
@@ -153,6 +154,7 @@ class Backtest:
         return metrics
 
     def set_start_date(self, start_date: str | date | datetime):
+        """Update the backtest start date, validating string input if needed."""
         if isinstance(start_date, str):
             if Backtest.__validate_date_format__(start_date):
                 self.start_date = start_date
@@ -162,6 +164,7 @@ class Backtest:
             self.start_date = start_date
 
     def set_end_date(self, end_date: str | date | datetime):
+        """Update the backtest end date, validating string input if needed."""
         if isinstance(end_date, str):
             if Backtest.__validate_date_format__(end_date):
                 self.end_date = end_date
@@ -172,6 +175,7 @@ class Backtest:
 
     @staticmethod
     def __validate_date_format__(date: str) ->  bool:
+        """Check whether a string is a valid YYYY-MM-DD date format."""
         try:
             datetime.strptime(date, "%Y-%m-%d")
             return True

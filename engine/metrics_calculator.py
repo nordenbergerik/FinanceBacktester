@@ -7,18 +7,20 @@ from pandas import DataFrame
 
 
 class MetricsCalculator:
-    #daily_returns: Series[float]
+    """Utility methods for portfolio performance and risk metric calculation."""
+
     @staticmethod
     def cagr(daily_returns, start_date: str | date | datetime, end_date: str | date | datetime ) -> float:
         """
         Calculate Compound Annual Growth Rate (CAGR) from daily returns.
 
         Args:
-            daily_returns: Series of daily returns (e.g., 0.01 for 1%)
-            dates: DatetimeIndex of the period
+            daily_returns: Series of daily returns (e.g., 0.01 for 1%).
+            start_date: Beginning of the return period.
+            end_date: End of the return period.
 
         Returns:
-            CAGR as a decimal (e.g., 0.1234 for 12.34%)
+            CAGR as a percentage value.
         """
         # Calculate cumulative return
         cumulative_return = np.exp(np.log(1 + daily_returns).cumsum())
@@ -36,7 +38,9 @@ class MetricsCalculator:
         cagr = ((cumulative_return.iloc[-1] / cumulative_return.iloc[0]) ** (1 / num_years) - 1) * 100
         return float(cagr)  # Convert to Python float
 
+    @staticmethod
     def __is_valid_date__(date_str: str) -> bool:
+        """Return True if the string is a valid YYYY-MM-DD date."""
         try:
             datetime.strptime(date_str, "%Y-%m-%d")
             return True

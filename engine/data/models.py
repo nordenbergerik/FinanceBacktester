@@ -39,9 +39,11 @@ class Bar:
 
     @property
     def typical_price(self) -> float:
+        """Return the typical price for the bar as the average of high, low, and close."""
         return (self.high + self.low + self.close) / 3
 
     @property
     def is_bullish(self) -> bool:
+        """Return True when the bar closes above its open price."""
         return self.close > self.open
     

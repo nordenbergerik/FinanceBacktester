@@ -11,7 +11,10 @@ class DataLoaderError(Exception):
 REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
 
 class DataLoader:
+    """Load and validate OHLCV market data from external sources."""
+
     def __init__(self, cache_dir: str | Path | None = None) -> None:
+        """Initialize the loader with an optional local cache directory."""
         self.cache_dir = Path(cache_dir) if cache_dir else None
 
     def load(self, symbol: str, start: str | date | datetime, end: str | date | datetime, source: str = "yfinance") -> pd.DataFrame:
@@ -42,6 +45,7 @@ class DataLoader:
     
     #-- Sources --------------------------------------------------------------------------------------------------------
     def _load_from_yfinance(self, symbol: str, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
+        """Download OHLCV data from yfinance for a given symbol and date range."""
         raw = yf.download(tickers=symbol, start=start, end=end)
         if raw.empty:
             raise DataLoaderError(f"No data returned for {symbol} between {start} and {end}")
@@ -50,6 +54,7 @@ class DataLoader:
         return raw
     
     def _load_from_csv(self, symbol: str, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
+        """Load OHLCV data from a local CSV file located in the cache directory."""
         if self.cache_dir is None:
             raise DataLoaderError("cache_dir must be set to use source='csv'")
         path = self.cache_dir / f"{symbol}.csv"
@@ -60,6 +65,7 @@ class DataLoader:
                 
     #-- Normalization --------------------------------------------------------------------------------------------------------
     def _normalize(self, raw: pd.DataFrame, symbol: str) -> pd.DataFrame:
+        """Normalize raw market data into a clean OHLCV DataFrame."""
         df = raw.rename(columns={c: c.lower() for c in raw.columns})
         missing = {c for c in REQUIRED_COLUMNS if c not in df.columns}
         if missing:

@@ -32,6 +32,7 @@ app.layout = html.Div([
     [Input('input', 'value')]
 )
 def update_graph(n_clicks, stock_symbol):
+    """Run the backtest when the button is clicked and return dashboard outputs."""
     if n_clicks > 0:  # Only run when button is clicked
         try:
             # Run backtest
