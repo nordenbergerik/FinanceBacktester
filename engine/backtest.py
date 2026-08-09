@@ -5,6 +5,7 @@ import numpy as np
 from pandas import DataFrame
 
 from dataclasses import dataclass
+from engine.backtest_config import BacktestConfig
 from engine.strategy.base import Strategy
 from engine.data.loader import DataLoader
 from datetime import date, datetime
@@ -24,16 +25,17 @@ class BacktestResult:
     
 
 class Backtest:
+    config: BacktestConfig
     strategy: Strategy
     symbol: str
     loader: DataLoader
-    start_date: date | datetime 
-    end_date: date | datetime
+    start_date: str | date | datetime 
+    end_date: str | date | datetime
     cash: float
     portfolio_value: list[float]
     shares: int
 
-    def __init__(self, strategy: Strategy, symbol: str, start_date: str | date | datetime, end_date: str | date | datetime, cash: float):
+    def __init__(self, config: BacktestConfig):
         """Initialize a backtest with a trading strategy, symbol, date range, and starting capital.
 
         Args:
@@ -43,14 +45,15 @@ class Backtest:
             end_date: End date of the backtest, either date-like or YYYY-MM-DD string.
             cash: Initial cash amount at the start of the backtest.
         """
-        self.strategy = strategy
-        self.symbol = symbol
-        self.loader = DataLoader()
-        self.start_date = start_date
-        self.end_date = end_date
-        self.cash = cash
-        self.portfolio_value = [cash]
-        self.shares = 0
+        self.config = config
+        self.strategy = config.strategy
+        self.symbol = config.symbol
+        self.loader = config.loader
+        self.start_date = config.start_date
+        self.end_date = config.end_date
+        self.cash = config.cash
+        self.portfolio_value = [config.cash]
+        self.shares = config.shares
     
     def run(self) -> BacktestResult:
         """Run the backtest and produce a result object with performance data.

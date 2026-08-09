@@ -1,3 +1,4 @@
+from engine.backtest_config import BacktestConfig
 from engine.data.loader import DataLoader
 from engine.strategy.examples.mockstrategy import Mockstrategy
 from engine.backtest import Backtest
@@ -35,14 +36,18 @@ def update_graph(n_clicks, stock_symbol):
     """Run the backtest when the button is clicked and return dashboard outputs."""
     if n_clicks > 0:  # Only run when button is clicked
         try:
-            # Run backtest
-            backtest = Backtest(
+            config = BacktestConfig(
                 strategy=Mockstrategy(),
                 symbol=stock_symbol,
+                loader=DataLoader(),
                 start_date="2010-01-01",
                 end_date="2023-06-01",
-                cash=1000.0
+                cash=1000.0,
+                shares=0
             )
+
+            # Run backtest
+            backtest = Backtest(config=config)
             backtest_result = backtest.run()
             return_buyandhold = backtest_result.return_buyandhold
 

@@ -25,12 +25,31 @@ class MetricsCalculator:
         # Calculate cumulative return
         cumulative_return = np.exp(np.log(1 + daily_returns).cumsum())
 
-        # Calculate number of years (accounting for partial years)
-        if MetricsCalculator.__is_valid_date__(start_date) and MetricsCalculator.__is_valid_date__(end_date):
-            start = datetime.strptime(start_date, "%Y-%m-%d")
-            end = datetime.strptime(end_date, "%Y-%m-%d")
+        # Parse/normalize start and end dates
+        if isinstance(start_date, str):
+            if MetricsCalculator.__is_valid_date__(start_date):
+                start = datetime.strptime(start_date, "%Y-%m-%d")
+            else:
+                raise ValueError("Date string must be in YYYY-MM-DD format")
+        elif isinstance(start_date, datetime):
+            start = start_date
+        elif isinstance(start_date, date):
+            start = datetime.combine(start_date, datetime.min.time())
         else:
-            raise ValueError("Wrong formated string")
+            raise ValueError("start_date must be a string, date, or datetime")
+
+        if isinstance(end_date, str):
+            if MetricsCalculator.__is_valid_date__(end_date):
+                end = datetime.strptime(end_date, "%Y-%m-%d")
+            else:
+                raise ValueError("Date string must be in YYYY-MM-DD format")
+        elif isinstance(end_date, datetime):
+            end = end_date
+        elif isinstance(end_date, date):
+            end = datetime.combine(end_date, datetime.min.time())
+        else:
+            raise ValueError("end_date must be a string, date, or datetime")
+
         total_days = (end - start).days
         num_years = total_days / 365.25  # 365.25 accounts for leap years
 
@@ -39,13 +58,15 @@ class MetricsCalculator:
         return float(cagr)  # Convert to Python float
 
     @staticmethod
-    def __is_valid_date__(date_str: str) -> bool:
-        """Return True if the string is a valid YYYY-MM-DD date."""
+    def __is_valid_date__(date_str: str | date | datetime) -> bool:
+        """Return True if the input is a valid date or valid YYYY-MM-DD string."""
+        if isinstance(date_str, (date, datetime)):
+            return True
+
         try:
             datetime.strptime(date_str, "%Y-%m-%d")
             return True
-        except Exception as e:
-            print(f"Error parsing string to date: {e}")
+        except Exception:
             return False
         
     @staticmethod

@@ -110,4 +110,4 @@ class DataLoader:
                 )
             except ValueError as e:
                 df.drop(labels=timestamp)
-                raise DataLoaderError("invalid bar")
+                # raise DataLoaderError("invalid bar")

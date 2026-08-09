@@ -4,6 +4,8 @@ import pytest
 
 import engine.backtest as backtest_module
 from engine.backtest import Backtest
+from engine.backtest_config import BacktestConfig
+from engine.data.loader import DataLoader
 from engine.strategy.base import Strategy
 
 
@@ -28,7 +30,7 @@ class DummyPlot:
         return DummyFigure()
 
 
-class FakeLoader:
+class FakeLoader(DataLoader):
     def __init__(self, data_by_symbol):
         self.data_by_symbol = data_by_symbol
 
@@ -63,15 +65,23 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
     monkeypatch.setattr(backtest_module.Backtest, "calculate_metrics", fake_calculate_metrics)
 
     strategy = FakeStrategy([1, 0, 0])
-    backtest = Backtest(strategy, "TEST", "2024-01-01", "2024-01-03", 100.0)
+    config = BacktestConfig(
+        strategy=strategy,
+        symbol="TEST",
+        loader=FakeLoader({"TEST": prices, "^GSPC": market_prices}),
+        start_date="2024-01-01",
+        end_date="2024-01-03",
+        cash=100.0,
+    )
+    backtest = Backtest(config)
     result = backtest.run()
 
     np.testing.assert_allclose(backtest.portfolio_value, [100.0, 110.0, 121.0])
     assert result.return_buyandhold == pytest.approx(21.0)
     assert list(result.dates) == list(prices.index)
     assert result.metrics == {"alpha": 0.5, "beta": 1.2}
-    assert metrics_called["start_date"] == "2024-01-01"
-    assert metrics_called["end_date"] == "2024-01-03"
+    assert metrics_called["start_date"] == pd.to_datetime("2024-01-01").date()
+    assert metrics_called["end_date"] == pd.to_datetime("2024-01-03").date()
 
 
 def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
@@ -81,7 +91,14 @@ def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
     monkeypatch.setattr(backtest_module.MetricsCalculator, "alpha", lambda asset_returns, market_returns, risk_free_rate: 0.44)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "beta", lambda asset_returns, market_returns: 0.55)
 
-    backtest = Backtest(FakeStrategy([0]), "TEST", "2024-01-01", "2024-01-03", 100.0)
+    config = BacktestConfig(
+        strategy=FakeStrategy([0]),
+        symbol="TEST",
+        start_date="2024-01-01",
+        end_date="2024-01-03",
+        cash=100.0,
+    )
+    backtest = Backtest(config)
     metrics = backtest.calculate_metrics(
         daily_returns=pd.Series([0.0, 0.01, 0.02]),
         market_returns=pd.Series([0.0, 0.005, 0.01]),
@@ -98,8 +115,27 @@ def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
     }
 
 
+def test_cagr_accepts_date_objects():
+    from engine.metrics_calculator import MetricsCalculator
+
+    returns = pd.Series([0.0, 0.01, 0.02])
+    start = pd.to_datetime("2024-01-01").date()
+    end = pd.to_datetime("2024-01-03").date()
+
+    cagr_value = MetricsCalculator.cagr(returns, start, end)
+
+    assert isinstance(cagr_value, float)
+
+
 def test_set_start_date_and_end_date_accepts_valid_strings():
-    backtest = Backtest(FakeStrategy([0]), "TEST", "2024-01-01", "2024-01-02", 100.0)
+    config = BacktestConfig(
+        strategy=FakeStrategy([0]),
+        symbol="TEST",
+        start_date="2024-01-01",
+        end_date="2024-01-02",
+        cash=100.0,
+    )
+    backtest = Backtest(config)
     backtest.set_start_date("2024-02-01")
     backtest.set_end_date("2024-02-28")
 
@@ -109,7 +145,14 @@ def test_set_start_date_and_end_date_accepts_valid_strings():
 
 @pytest.mark.parametrize("invalid_date", ["2024-02-30", "not-a-date", "2024/02/01"])
 def test_set_start_date_rejects_invalid_string(invalid_date):
-    backtest = Backtest(FakeStrategy([0]), "TEST", "2024-01-01", "2024-01-02", 100.0)
+    config = BacktestConfig(
+        strategy=FakeStrategy([0]),
+        symbol="TEST",
+        start_date="2024-01-01",
+        end_date="2024-01-02",
+        cash=100.0,
+    )
+    backtest = Backtest(config)
 
     with pytest.raises(ValueError, match="Date string must be in YYYY-MM-DD format"):
         backtest.set_start_date(invalid_date)

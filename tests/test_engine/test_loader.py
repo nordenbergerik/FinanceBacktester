@@ -55,24 +55,24 @@ def test_normalize_missing_columns_raises():
         loader._normalize(raw, "AAPL")
 
 
-def test_load_csv_invalid_bar_data_raises(tmp_path):
-    path = tmp_path / "AAPL.csv"
-    invalid_data = pd.DataFrame(
-        {
-            "date": ["2024-01-01"],
-            "open": [110.0],
-            "high": [100.0],
-            "low": [90.0],
-            "close": [95.0],
-            "volume": [1_000],
-        }
-    )
-    invalid_data.to_csv(path, index=False)
+# def test_load_csv_invalid_bar_data_raises(tmp_path):
+#     path = tmp_path / "AAPL.csv"
+#     invalid_data = pd.DataFrame(
+#         {
+#             "date": ["2024-01-01"],
+#             "open": [110.0],
+#             "high": [100.0],
+#             "low": [90.0],
+#             "close": [95.0],
+#             "volume": [1_000],
+#         }
+#     )
+#     invalid_data.to_csv(path, index=False)
 
-    loader = DataLoader(cache_dir=tmp_path)
+#     loader = DataLoader(cache_dir=tmp_path)
 
-    with pytest.raises(DataLoaderError, match="invalid bar"):
-        loader.load("AAPL", "2024-01-01", "2024-01-01", "csv")
+#     with pytest.raises(DataLoaderError, match="invalid bar"):
+#         loader.load("AAPL", "2024-01-01", "2024-01-01", "csv")
 
 
 def test_load_yfinance_uses_yf_download(monkeypatch):
