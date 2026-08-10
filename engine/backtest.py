@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from pandas import DataFrame
 
@@ -61,7 +62,21 @@ class Backtest:
         This method loads market data, applies the strategy signals, computes strategy returns,
         compares performance to the market, and builds a plot for visualization.
         """
+        # Load stock and marrket dataframes
         df = self.loader.load(symbol=self.symbol, start=self.start_date, end=self.end_date)
+        market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
+
+        # Remove NaN values for both stock and market dataframes
+        df, market_df = df.align(market_df, join="inner", axis=0)
+        combined = pd.concat(
+            [df["close"], market_df["close"]],
+            axis=1,
+            keys=["stock_close", "market_close"]
+        )
+        cleaned = combined.dropna(subset=["stock_close", "market_close"])
+        df = df.loc[cleaned.index]
+        market_df = market_df.loc[cleaned.index]
+
         signals = self.strategy.generate_signals(df)
         closing_prices = df['close']
 
@@ -90,8 +105,7 @@ class Backtest:
         final_price = closing_prices.iloc[-1]
         return_buyandhold = ((final_price / starting_price) - 1) * 100
 
-        # Load market benchmark data and compute its cumulative return.
-        market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
+        # Compute benchmark return series from the already aligned market data.
         market_closing_prices = market_df['close']
         market_returns = market_closing_prices.pct_change().fillna(0)
         market_returns_log = np.log(1 + market_returns)
@@ -118,7 +132,7 @@ class Backtest:
             line=dict(color="red")
         )
         combined_fig.add_scatter(
-            x=market_df.index,
+            x=df.index,
             y=stock_returns,
             name="Stock ROI",
             line=dict(color="green")

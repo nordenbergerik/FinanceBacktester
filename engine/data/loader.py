@@ -1,5 +1,6 @@
 import pandas as pd
 import yfinance as yf
+import numpy as np
 
 from datetime import datetime, date
 from pathlib import Path
@@ -109,5 +110,4 @@ class DataLoader:
                     volume=row["volume"],
                 )
             except ValueError as e:
-                df.drop(labels=timestamp)
-                # raise DataLoaderError("invalid bar")
+                df.loc[timestamp, "close"] = np.nan
