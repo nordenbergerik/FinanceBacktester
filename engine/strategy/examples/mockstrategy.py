@@ -16,7 +16,7 @@ class Mockstrategy(Strategy):
         signals = pd.Series(0, index=df.index)
         df['prev_close'] = df['close'].shift(1)
         df['prev_prev_close'] = df['close'].shift(2)
-        threshold = 0.03
+        threshold = 0.02
         signals[(df['prev_close'] > df['prev_prev_close'] * (1 + threshold))] = 1
         signals[(df['prev_close'] < df['prev_prev_close'] * (1 - threshold))] = -1
         return signals

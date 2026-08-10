@@ -65,8 +65,9 @@ class Backtest:
         signals = self.strategy.generate_signals(df)
         closing_prices = df['close']
 
-        # Build a running position series (0 = cash, 1 = long) from raw trading signals.
-        positions = signals.cumsum().ffill().fillna(0)
+        # Build a running position series from raw trading signals.
+        # Treat 0 as no new signal and carry forward the most recent valid position.
+        positions = signals.replace(0, np.nan).ffill().fillna(0).clip(-1, 1)
 
         # Compute daily asset returns from the close prices.
         price_returns = closing_prices.pct_change().fillna(0)
@@ -95,6 +96,9 @@ class Backtest:
         market_returns = market_closing_prices.pct_change().fillna(0)
         market_returns_log = np.log(1 + market_returns)
         market_returns_roi = (np.exp(market_returns_log.cumsum()) - 1) * 100
+
+        # Returns from stock (%)
+        stock_returns = (closing_prices / df['close'].iloc[0] - 1) * 100
         
         # Build a combined line chart for the strategy ROI and market benchmark.
         combined_fig = px.line(
@@ -104,7 +108,7 @@ class Backtest:
         combined_fig.add_scatter(
             x=df.index,
             y=roi,
-            name="ROI (%)",
+            name="Strategy ROI (%)",
             line=dict(color="blue")
         )
         combined_fig.add_scatter(
@@ -112,6 +116,12 @@ class Backtest:
             y=market_returns_roi,
             name="S&P500",
             line=dict(color="red")
+        )
+        combined_fig.add_scatter(
+            x=market_df.index,
+            y=stock_returns,
+            name="Stock ROI",
+            line=dict(color="green")
         )
 
         metrics = self.calculate_metrics(
