@@ -10,12 +10,12 @@ class MetricsCalculator:
     """Utility methods for portfolio performance and risk metric calculation."""
 
     @staticmethod
-    def cagr(daily_returns, start_date: str | date | datetime, end_date: str | date | datetime ) -> float:
+    def cagr(asset_returns, start_date: str | date | datetime, end_date: str | date | datetime) -> float:
         """
         Calculate Compound Annual Growth Rate (CAGR) from daily returns.
 
         Args:
-            daily_returns: Series of daily returns (e.g., 0.01 for 1%).
+            asset_returns: Series of daily returns (e.g., 0.01 for 1%).
             start_date: Beginning of the return period.
             end_date: End of the return period.
 
@@ -23,7 +23,7 @@ class MetricsCalculator:
             CAGR as a percentage value.
         """
         # Calculate cumulative return
-        cumulative_return = np.exp(np.log(1 + daily_returns).cumsum())
+        cumulative_return = np.exp(np.log(1 + asset_returns).cumsum())
 
         # Parse/normalize start and end dates
         if isinstance(start_date, str):
@@ -70,20 +70,20 @@ class MetricsCalculator:
             return False
         
     @staticmethod
-    def sharpe(daily_returns, risk_free_rate: float = 0.0) -> float:
+    def sharpe(asset_returns, risk_free_rate: float = 0.0) -> float:
         """
         Calculate the Sharpe ratio from daily returns.
 
         Args:
-            daily_returns: Series-like daily returns as decimals (e.g. 0.01 for 1%).
+            asset_returns: Series-like daily returns as decimals (e.g. 0.01 for 1%).
             risk_free_rate: Annual risk-free rate as a decimal.
 
         Returns:
             Sharpe ratio (annualized if daily returns are daily).
         """
-        returns = np.asarray(daily_returns, dtype=float)
+        returns = np.asarray(asset_returns, dtype=float)
         if returns.size == 0:
-            raise ValueError("daily_returns must contain at least one value")
+            raise ValueError("asset_returns must contain at least one value")
 
         daily_risk_free = risk_free_rate / 252
         excess_returns = returns - daily_risk_free
@@ -96,7 +96,7 @@ class MetricsCalculator:
         return float(mean_excess / std_excess)
 
     @staticmethod
-    def max_drawdown(daily_returns):
+    def max_drawdown(asset_returns):
         """
         Calculate Maximum Drawdown from a series of returns.
 
@@ -107,7 +107,7 @@ class MetricsCalculator:
             Maximum drawdown as a decimal (e.g., 0.25 for 25%)
         """
         # Convert returns to cumulative product (price curve)
-        cumulative_returns = (1 + daily_returns).cumprod()
+        cumulative_returns = (1 + asset_returns).cumprod()
 
         # Calculate running maximum
         running_max = cumulative_returns.expanding().max()
@@ -162,3 +162,54 @@ class MetricsCalculator:
 
         beta = covariance / market_variance
         return beta
+
+    @staticmethod
+    def annualized_volatility(asset_returns):
+        """
+        Calculate annualized volatility from periodic returns.
+
+        Args:
+            asset_returns: Series-like periodic returns as decimals (e.g. daily returns).
+
+        Returns:
+            Annualized standard deviation of returns.
+        """
+        daily_volatility = np.std(asset_returns)
+        annualized_volatility = daily_volatility * np.sqrt(252)
+        return annualized_volatility
+
+    @staticmethod
+    def sortino_ratio(asset_returns, risk_free_rate=0.0):
+        """
+        Calculate the Sortino ratio for downside-risk-adjusted performance.
+
+        Args:
+            asset_returns: Series-like periodic returns as decimals.
+            risk_free_rate: Annual risk-free rate as a decimal.
+
+        Returns:
+            Sortino ratio using downside volatility instead of total volatility.
+        """
+        downside_returns = asset_returns[asset_returns > 0]
+        downside_volatility = np.std(downside_returns)
+        excess_returns = np.mean(asset_returns) - risk_free_rate
+        sortino_ratio = excess_returns / downside_volatility
+        return sortino_ratio
+
+    @staticmethod
+    def calmar_ratio(asset_returns, start_date: str | date | datetime, end_date: str | date | datetime):
+        """
+        Calculate the Calmar ratio by comparing CAGR to maximum drawdown.
+
+        Args:
+            asset_returns: Series-like periodic returns as decimals.
+            start_date: Beginning of the return period.
+            end_date: End of the return period.
+
+        Returns:
+            Calmar ratio, which is the ratio of annualized return to maximum drawdown.
+        """
+        max_drawdown = MetricsCalculator.max_drawdown(asset_returns=asset_returns)
+        cagr = MetricsCalculator.cagr(asset_returns=asset_returns, start_date=start_date, end_date=end_date)
+        calmar_ratio = cagr / max_drawdown
+        return calmar_ratio
