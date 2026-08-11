@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from indicators import ema, macd, rsi, sma, volatility
+from indicators import bollinger, ema, macd, momentum, rsi, sma, volatility
 
 
 def test_calculate_sma_computes_simple_moving_average():
@@ -49,6 +49,50 @@ def test_calculate_volatility_returns_annualized_rolling_std():
     expected = prices.pct_change().rolling(window=3, min_periods=3).std(ddof=1) * np.sqrt(252)
 
     result = volatility.calculate_volatility(prices, window=3)
+
+    pd.testing.assert_series_equal(result, expected)
+
+
+def test_calculate_rolling_volatility_returns_non_annualized_values():
+    prices = pd.Series([100.0, 101.0, 102.0, 100.0, 99.0, 98.0])
+    expected = prices.pct_change().rolling(window=3, min_periods=3).std(ddof=1)
+
+    result = volatility.calculate_rolling_volatility(prices, window=3, annualize=False)
+
+    pd.testing.assert_series_equal(result, expected)
+
+
+def test_calculate_rolling_volatility_returns_annualized_values():
+    prices = pd.Series([100.0, 101.0, 102.0, 100.0, 99.0, 98.0])
+    expected = prices.pct_change().rolling(window=3, min_periods=3).std(ddof=1) * np.sqrt(252)
+
+    result = volatility.calculate_rolling_volatility(prices, window=3, annualize=True)
+
+    pd.testing.assert_series_equal(result, expected)
+
+
+def test_calculate_bollinger_bands_returns_expected_columns_and_values():
+    prices = pd.Series([100.0, 101.0, 102.0, 103.0, 104.0, 105.0])
+    middle = prices.rolling(window=3, min_periods=3).mean()
+    std = prices.rolling(window=3, min_periods=3).std(ddof=1)
+    expected = pd.DataFrame(
+        {
+            "lower_band": middle - std * 2.0,
+            "middle_band": middle,
+            "upper_band": middle + std * 2.0,
+        }
+    )
+
+    result = bollinger.calculate_bollinger_bands(prices, window=3, num_std_dev=2.0)
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_calculate_momentum_returns_price_difference():
+    prices = pd.Series([100.0, 101.0, 105.0, 110.0, 108.0])
+    expected = prices.diff(2)
+
+    result = momentum.calculate_momentum(prices, window=2)
 
     pd.testing.assert_series_equal(result, expected)
 
