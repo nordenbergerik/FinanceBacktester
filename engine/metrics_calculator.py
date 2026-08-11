@@ -164,21 +164,6 @@ class MetricsCalculator:
         return beta
 
     @staticmethod
-    def annualized_volatility(asset_returns):
-        """
-        Calculate annualized volatility from periodic returns.
-
-        Args:
-            asset_returns: Series-like periodic returns as decimals (e.g. daily returns).
-
-        Returns:
-            Annualized standard deviation of returns.
-        """
-        daily_volatility = np.std(asset_returns)
-        annualized_volatility = daily_volatility * np.sqrt(252)
-        return annualized_volatility
-
-    @staticmethod
     def sortino_ratio(asset_returns, risk_free_rate=0.0):
         """
         Calculate the Sortino ratio for downside-risk-adjusted performance.

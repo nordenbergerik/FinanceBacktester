@@ -11,6 +11,7 @@ from engine.strategy.base import Strategy
 from engine.data.loader import DataLoader
 from datetime import date, datetime
 from engine.metrics_calculator import MetricsCalculator
+from indicators import sma
 
 import plotly.express as px
 from plotly.graph_objs import Figure
@@ -62,6 +63,7 @@ class Backtest:
         This method loads market data, applies the strategy signals, computes strategy returns,
         compares performance to the market, and builds a plot for visualization.
         """
+
         # Load stock and marrket dataframes
         df = self.loader.load(symbol=self.symbol, start=self.start_date, end=self.end_date)
         market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
@@ -160,23 +162,23 @@ class Backtest:
         """Compute standard performance metrics from strategy and benchmark returns."""
         metrics = {}
         metrics["cagr"] = MetricsCalculator.cagr(
-            daily_returns=daily_returns,
-            start_date=start_date,
-            end_date=end_date,
+            daily_returns,
+            start_date,
+            end_date,
         )
         metrics["sharpe"] = MetricsCalculator.sharpe(
-            daily_returns=daily_returns,
+            daily_returns,
             risk_free_rate=0.0
         )
-        metrics["max_drawdown"] = MetricsCalculator.max_drawdown(daily_returns=daily_returns)
+        metrics["max_drawdown"] = MetricsCalculator.max_drawdown(daily_returns)
         metrics["alpha"] = MetricsCalculator.alpha(
-            asset_returns=daily_returns,
-            market_returns=market_returns,
+            daily_returns,
+            market_returns,
             risk_free_rate=0.0
         )
         metrics["beta"] = MetricsCalculator.beta(
-            asset_returns=daily_returns,
-            market_returns=market_returns
+            daily_returns,
+            market_returns
         )
         return metrics
 
