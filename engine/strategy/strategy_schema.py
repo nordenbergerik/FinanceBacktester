@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Literal, Union, List, Optional
 
 OperatorType = Literal["<", ">", "==", "<=", ">="]
-IndicatorName = Literal["SMA", "EMA", "RSI", "MACD", "BOLLINGER_UPPER", "BOLLINGER_MIDDLE", "BOLLINGER_LOWER"]
+IndicatorName = Literal["PRICE", "SMA", "EMA", "RSI", "MACD", "BOLLINGER_UPPER", "BOLLINGER_MIDDLE", "BOLLINGER_LOWER"]
 
 # Model for a single condition (e.g., RSI < 30)
 class Condition(BaseModel):
@@ -27,8 +27,6 @@ class RiskRules(BaseModel):
 class StrategySchema(BaseModel):
     name: str = Field(description="Name of the strategy")
     description: str = Field(description="Short description of the logic")
-    asset: str = Field(description="Asset/Ticker, e.g. AAPL or OMXS30")
-    timeframe: str = Field(default="1d", description="Time resolution")
     entry_rules: RuleGroup = Field(description="Conditions for entering a position (Buy)")
     exit_rules: RuleGroup = Field(description="Conditions for exiting a position (Sell)")
     risk_management: RiskRules = Field(default_factory=RiskRules)
@@ -37,8 +35,6 @@ class StrategySchema(BaseModel):
 # {
 #   "name": "RSI Mean Reversion",
 #   "description": "Köp vid översålt läge över långsiktig trend",
-#   "asset": "AAPL",
-#   "timeframe": "1d",
 #   "entry_rules": {
 #     "logic": "AND",
 #     "conditions": [
