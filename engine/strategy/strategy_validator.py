@@ -2,7 +2,6 @@ from pydantic import ValidationError
 
 from engine.strategy.strategy_schema import StrategySchema
 
-
 def validate_strategy(strategy):
     """
     Validate the strategy dictionary against the StrategySchema.

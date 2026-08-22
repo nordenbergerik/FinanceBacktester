@@ -156,3 +156,19 @@ def test_set_start_date_rejects_invalid_string(invalid_date):
 
     with pytest.raises(ValueError, match="Date string must be in YYYY-MM-DD format"):
         backtest.set_start_date(invalid_date)
+
+
+def test_backtest_result_stores_completed_backtest_outputs():
+    from engine.backtest import BacktestResult
+
+    result = BacktestResult(
+        plot=DummyFigure(),
+        return_buyandhold=12.5,
+        dates=pd.Index([pd.Timestamp("2024-01-01")]),
+        metrics={"sharpe": 1.2},
+        df=pd.DataFrame({"close": [100.0]}),
+    )
+
+    assert result.return_buyandhold == 12.5
+    assert result.metrics == {"sharpe": 1.2}
+    assert result.df.loc[0, "close"] == 100.0
