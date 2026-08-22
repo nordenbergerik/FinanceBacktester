@@ -19,6 +19,7 @@ class BacktestConfig(BaseModel):
 
     @field_validator("start_date", "end_date", mode="before")
     def parse_date(cls, value):
+        """Convert YYYY-MM-DD strings to dates before model validation."""
         if isinstance(value, str):
             try:
                 return datetime.strptime(value, "%Y-%m-%d").date()

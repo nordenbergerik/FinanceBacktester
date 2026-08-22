@@ -90,6 +90,7 @@ class DataLoader:
         return df   
 
     def _filter_date_range(self, df: pd.DataFrame, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
+        """Return only rows whose timestamps fall within the requested range."""
         return df.loc[pd.Timestamp(start) : pd.Timestamp(end)]
     
     #-- Validation --------------------------------------------------------------------------------------------------------
