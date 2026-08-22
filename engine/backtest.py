@@ -71,7 +71,7 @@ class Backtest:
         # Remove NaN values for both stock and market dataframes
         df, market_df = df.align(market_df, join="inner", axis=0)
         combined = pd.concat(
-            [df["close"], market_df["close"]],
+            [df["adj close"], market_df["adj close"]],
             axis=1,
             keys=["stock_close", "market_close"]
         )
@@ -80,13 +80,13 @@ class Backtest:
         market_df = market_df.loc[cleaned.index]
 
         signals = self.strategy.generate_signals(df)
-        closing_prices = df['close']
+        closing_prices = df['adj close']
 
         # Build a running position series from raw trading signals.
         # Treat 0 as no new signal and carry forward the most recent valid position.
         positions = signals.replace(0, np.nan).ffill().fillna(0).clip(-1, 1)
 
-        # Compute daily asset returns from the close prices.
+        # Compute daily asset returns from adjusted close prices.
         price_returns = closing_prices.pct_change().fillna(0)
 
         # The strategy return uses the prior day's position, because today's return is realized
@@ -108,13 +108,13 @@ class Backtest:
         return_buyandhold = ((final_price / starting_price) - 1) * 100
 
         # Compute benchmark return series from the already aligned market data.
-        market_closing_prices = market_df['close']
+        market_closing_prices = market_df['adj close']
         market_returns = market_closing_prices.pct_change().fillna(0)
         market_returns_log = np.log(1 + market_returns)
         market_returns_roi = (np.exp(market_returns_log.cumsum()) - 1) * 100
 
         # Returns from stock (%)
-        stock_returns = (closing_prices / df['close'].iloc[0] - 1) * 100
+        stock_returns = (closing_prices / df['adj close'].iloc[0] - 1) * 100
         
         # Build a combined line chart for the strategy ROI and market benchmark.
         combined_fig = px.line(

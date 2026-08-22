@@ -26,4 +26,3 @@ class BacktestConfig(BaseModel):
             except ValueError:
                 raise ValueError("Date must be in YYYY-MM-DD format")
         return value
-

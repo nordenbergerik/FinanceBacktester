@@ -12,7 +12,7 @@ def test_load_csv_filters_date_range(tmp_path):
             "open": [100, 101, 102],
             "high": [101, 102, 103],
             "low": [99, 100, 101],
-            "close": [100.5, 101.5, 102.5],
+            "adj close": [100.5, 101.5, 102.5],
             "volume": [1_000, 1_100, 1_200],
         }
     )
@@ -78,16 +78,18 @@ def test_normalize_missing_columns_raises():
 def test_load_yfinance_uses_yf_download(monkeypatch):
     downloaded = {}
 
-    def fake_download(tickers, start, end):
+    def fake_download(tickers, start, end, auto_adjust):
         downloaded["tickers"] = tickers
         downloaded["start"] = start
         downloaded["end"] = end
+        downloaded["auto_adjust"] = auto_adjust
         return pd.DataFrame(
             {
                 "Open": [100.0],
                 "High": [101.0],
                 "Low": [99.0],
                 "Close": [100.5],
+                "Adj Close": [100.5],
                 "Volume": [1_000],
             },
             index=pd.to_datetime(["2024-01-01"]),
@@ -100,8 +102,9 @@ def test_load_yfinance_uses_yf_download(monkeypatch):
     assert downloaded["tickers"] == "AAPL"
     assert downloaded["start"] == "2024-01-01"
     assert downloaded["end"] == "2024-01-01"
+    assert downloaded["auto_adjust"] is False
     assert df.index.name == "timestamp"
-    assert df.loc[pd.Timestamp("2024-01-01"), "close"] == 100.5
+    assert df.loc[pd.Timestamp("2024-01-01"), "adj close"] == 100.5
 
 
 def test_load_unknown_source_raises():

@@ -9,7 +9,7 @@ from engine.data.models import Bar
 class DataLoaderError(Exception):
     """Raised when data cannot be loaded or fails validation."""
 
-REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
+REQUIRED_COLUMNS = ["open", "high", "low", "adj close", "volume"]
 
 class DataLoader:
     """Load and validate OHLCV market data from external sources."""
@@ -27,11 +27,11 @@ class DataLoader:
             end: inclusive end date.
             source: 'yfinance' or 'csv'. For 'csv', looks for
                 {cache_dir}/{symbol}.csv with columns
-                date,open,high,low,close,volume.
+                date,open,high,low,adj close,volume.
 
         Returns:
             DataFrame indexed by DatetimeIndex ('timestamp'), with
-            float columns: open, high, low, close, volume.
+            float columns: open, high, low, adj close, volume.
         """
         if source == "yfinance":
             raw = self._load_from_yfinance(symbol, start, end)
@@ -47,7 +47,7 @@ class DataLoader:
     #-- Sources --------------------------------------------------------------------------------------------------------
     def _load_from_yfinance(self, symbol: str, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
         """Download OHLCV data from yfinance for a given symbol and date range."""
-        raw = yf.download(tickers=symbol, start=start, end=end)
+        raw = yf.download(tickers=symbol, start=start, end=end, auto_adjust=False)
         if raw.empty:
             raise DataLoaderError(f"No data returned for {symbol} between {start} and {end}")
         if isinstance(raw.columns, pd.MultiIndex):
@@ -107,8 +107,8 @@ class DataLoader:
                     open=row["open"],
                     high=row["high"],
                     low=row["low"],
-                    close=row["close"],
+                    close=row["adj close"],
                     volume=row["volume"],
                 )
             except ValueError as e:
-                df.loc[timestamp, "close"] = np.nan
+                df.loc[timestamp, "adj close"] = np.nan

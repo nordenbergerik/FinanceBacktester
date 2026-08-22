@@ -51,7 +51,7 @@ class StrategyExecutor(Strategy):
 
     def __evaluate_risk_management__(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, float]:
         """Identify stop-loss and take-profit triggers from daily price returns."""
-        closing_prices = df["close"]
+        closing_prices = df["adj close"]
         stop_loss_pct = self.strategy.risk_management.stop_loss_pct
         take_profit_pct = self.strategy.risk_management.take_profit_pct
         position_size = self.strategy.risk_management.position_size
@@ -82,7 +82,7 @@ class StrategyExecutor(Strategy):
     def __evaluate_condition__(self, df: pd.DataFrame, condition: Condition) -> pd.Series:
         """Evaluate one condition against prices or a calculated indicator."""
         if condition.indicator == "PRICE":
-            values = df["close"]
+            values = df["adj close"]
         else:
             values = self.__calculate_indicator__(df, condition.indicator, condition.params)
             if isinstance(values, pd.DataFrame):
@@ -116,19 +116,19 @@ class StrategyExecutor(Strategy):
         """Dispatch an indicator name to its calculation function."""
         match indicator:
             case "SMA":
-                return calculate_sma(prices=df["close"], window=params.get("period"))
+                return calculate_sma(prices=df["adj close"], window=params.get("period"))
             case "RSI":
-                return calculate_rsi(prices=df["close"], window=params.get("period"))
+                return calculate_rsi(prices=df["adj close"], window=params.get("period"))
             case "MACD":
-                return calculate_macd(prices=df["close"], fast=params.get("fast_period", 12), slow=params.get("slow_period", 26), signal=params.get("signal_period", 9))
+                return calculate_macd(prices=df["adj close"], fast=params.get("fast_period", 12), slow=params.get("slow_period", 26), signal=params.get("signal_period", 9))
             case "EMA":
-                return calculate_ema(prices=df["close"], window=params.get("period"))
+                return calculate_ema(prices=df["adj close"], window=params.get("period"))
             case "BOLLINGER_UPPER":
-                return calculate_bollinger_bands(prices=df["close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[0]
+                return calculate_bollinger_bands(prices=df["adj close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[0]
             case "BOLLINGER_MIDDLE":
-                return calculate_bollinger_bands(prices=df["close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[1]
+                return calculate_bollinger_bands(prices=df["adj close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[1]
             case "BOLLINGER_LOWER":
-                return calculate_bollinger_bands(prices=df["close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[2]
+                return calculate_bollinger_bands(prices=df["adj close"], window=params.get("period"), num_std_dev=params.get("num_std_dev", 2))[2]
             case _:
                 raise ValueError(
                     f"Invalid indicator: '{indicator}'. Expected one of: ['SMA', 'EMA', 'RSI', 'MACD', 'BOLLINGER_UPPER', 'BOLLINGER_MIDDLE', 'BOLLINGER_LOWER']"

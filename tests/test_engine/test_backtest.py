@@ -42,11 +42,11 @@ class FakeLoader(DataLoader):
 
 def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
     prices = pd.DataFrame(
-        {"close": [100.0, 110.0, 121.0]},
+        {"adj close": [100.0, 110.0, 121.0]},
         index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
     )
     market_prices = pd.DataFrame(
-        {"close": [200.0, 198.0, 202.0]},
+        {"adj close": [200.0, 198.0, 202.0]},
         index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
     )
 
@@ -166,9 +166,9 @@ def test_backtest_result_stores_completed_backtest_outputs():
         return_buyandhold=12.5,
         dates=pd.Index([pd.Timestamp("2024-01-01")]),
         metrics={"sharpe": 1.2},
-        df=pd.DataFrame({"close": [100.0]}),
+        df=pd.DataFrame({"adj close": [100.0]}),
     )
 
     assert result.return_buyandhold == 12.5
     assert result.metrics == {"sharpe": 1.2}
-    assert result.df.loc[0, "close"] == 100.0
+    assert result.df.loc[0, "adj close"] == 100.0

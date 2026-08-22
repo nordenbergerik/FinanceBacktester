@@ -138,7 +138,7 @@ vectorized DataFrame operations rather than a literal loop.
 1. Loads the strategy's symbol data and the benchmark's symbol data via
    `DataLoader`.
 2. Calls `strategy.generate_signals(df)` to get the `signal` column.
-3. Computes raw returns (`close.pct_change()`) and strategy returns
+3. Computes raw returns (`adj close.pct_change()`) and strategy returns
    (`returns * signal.shift(1)` — the `.shift(1)` is what prevents
    look-ahead bias: today's signal can only affect *tomorrow's* return).
 4. Subtracts commission cost on days the position changes.

@@ -26,7 +26,7 @@ def price_condition(operator, target_value, target_type="value"):
 
 def test_entry_conditions_return_index_aligned_boolean_series():
     index = pd.date_range("2024-01-01", periods=3)
-    prices = pd.DataFrame({"close": [99.0, 101.0, 100.0]}, index=index)
+    prices = pd.DataFrame({"adj close": [99.0, 101.0, 100.0]}, index=index)
     executor = StrategyExecutor(
         make_strategy(
             [price_condition(">", 100), price_condition("<", 102)],
@@ -41,7 +41,7 @@ def test_entry_conditions_return_index_aligned_boolean_series():
 
 
 def test_or_logic_combines_conditions_row_by_row():
-    prices = pd.DataFrame({"close": [99.0, 101.0, 103.0]})
+    prices = pd.DataFrame({"adj close": [99.0, 101.0, 103.0]})
     executor = StrategyExecutor(
         make_strategy(
             [price_condition("<", 100), price_condition(">", 102)],
@@ -54,7 +54,7 @@ def test_or_logic_combines_conditions_row_by_row():
 
 
 def test_indicator_target_and_sma_condition_are_evaluated():
-    prices = pd.DataFrame({"close": [10.0, 12.0, 14.0]})
+    prices = pd.DataFrame({"adj close": [10.0, 12.0, 14.0]})
     executor = StrategyExecutor(
         make_strategy(
             [
@@ -76,7 +76,7 @@ def test_indicator_target_and_sma_condition_are_evaluated():
 
 
 def test_generate_signals_holds_position_until_exit():
-    prices = pd.DataFrame({"close": [99.0, 101.0, 102.0, 104.0]})
+    prices = pd.DataFrame({"adj close": [99.0, 101.0, 102.0, 104.0]})
     executor = StrategyExecutor(
         make_strategy(
             [price_condition(">", 100)],
@@ -91,7 +91,7 @@ def test_generate_signals_holds_position_until_exit():
 
 
 def test_risk_management_returns_triggers_and_position_size():
-    prices = pd.DataFrame({"close": [100.0, 90.0, 100.0, 110.0]})
+    prices = pd.DataFrame({"adj close": [100.0, 90.0, 100.0, 110.0]})
     executor = StrategyExecutor(
         make_strategy(
             [price_condition(">", 0)],
