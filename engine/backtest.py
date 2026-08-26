@@ -18,13 +18,10 @@ from plotly.graph_objs import Figure
 
 @dataclass
 class BacktestResult:
-    """Stores backtest results including ROI curve, price curve, market curve, dates, metrics, and raw data."""
-    plot: Figure
-    return_buyandhold: float
+    """Stores backtest results including dates, metrics, and raw data."""
     dates: date
     metrics: dict[str, Any]
-    df: DataFrame
-    
+    stock_df: DataFrame
 
 class Backtest:
     config: BacktestConfig
@@ -60,27 +57,21 @@ class Backtest:
     def run(self) -> BacktestResult:
         """Run the backtest and produce a result object with performance data.
 
-        This method loads market data, applies the strategy signals, computes strategy returns,
-        compares performance to the market, and builds a plot for visualization.
+        This method loads benchmark data, applies the strategy signals, computes strategy returns,
+        compares performance to the benchmark, and builds a plot for visualization.
         """
 
         # Load stock and marrket dataframes
-        df = self.loader.load(symbol=self.symbol, start=self.start_date, end=self.end_date)
-        market_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
+        stock_df = self.loader.load(symbol=self.symbol, start=self.start_date, end=self.end_date)
+        benchmark_df = self.loader.load("^GSPC", start=self.start_date, end=self.end_date)
 
-        # Remove NaN values for both stock and market dataframes
-        df, market_df = df.align(market_df, join="inner", axis=0)
-        combined = pd.concat(
-            [df["adj close"], market_df["adj close"]],
-            axis=1,
-            keys=["stock_close", "market_close"]
-        )
-        cleaned = combined.dropna(subset=["stock_close", "market_close"])
-        df = df.loc[cleaned.index]
-        market_df = market_df.loc[cleaned.index]
+        # Remove NaN values for both stock and benchmark dataframes
+        cleaned_dataframes = self.clean_df_index(stock_df=stock_df, benchmark_df=benchmark_df)
+        stock_df = cleaned_dataframes.get("stock_df")
+        benchmark_df = cleaned_dataframes.get("benchmark_df")
 
-        signals = self.strategy.generate_signals(df)
-        closing_prices = df['adj close']
+        signals = self.strategy.generate_signals(stock_df)
+        closing_prices = stock_df['adj close']
 
         # Build a running position series from raw trading signals.
         # Treat 0 as no new signal and carry forward the most recent valid position.
@@ -102,62 +93,51 @@ class Backtest:
         # Convert daily strategy returns to percentage values for metric calculations.
         returns = strategy_returns.to_numpy() * 100
 
-        return_buyandhold = MetricsCalculator.buy_and_hold_return(closing_prices=closing_prices)
-
-        # Compute benchmark return series from the already aligned market data.
-        market_closing_prices = market_df['adj close']
-        market_returns = market_closing_prices.pct_change().fillna(0)
-        market_returns_log = np.log(1 + market_returns)
-        market_returns_roi = (np.exp(market_returns_log.cumsum()) - 1) * 100
-
-        # Returns from stock (%)
-        stock_returns = (closing_prices / df['adj close'].iloc[0] - 1) * 100
-        
-        # Build a combined line chart for the strategy ROI and market benchmark.
-        combined_fig = px.line(
-            title="ROI, Price, and Market Comparison"
-        )
-
-        combined_fig.add_scatter(
-            x=df.index,
-            y=roi,
-            name="Strategy ROI (%)",
-            line=dict(color="blue")
-        )
-        combined_fig.add_scatter(
-            x=market_df.index,
-            y=market_returns_roi,
-            name="S&P500",
-            line=dict(color="red")
-        )
-        combined_fig.add_scatter(
-            x=df.index,
-            y=stock_returns,
-            name="Stock ROI",
-            line=dict(color="green")
-        )
+        # Compute benchmark return series from the already aligned benchmark data.
+        benchmark_closing_prices = benchmark_df['adj close']
+        benchmark_returns = benchmark_closing_prices.pct_change().fillna(0)
+        benchmark_returns_log = np.log(1 + benchmark_returns)
+        benchmark_returns_roi = (np.exp(benchmark_returns_log.cumsum()) - 1) * 100
 
         metrics = self.calculate_metrics(
             daily_returns=strategy_returns,
-            market_returns=market_returns,
+            benchmark_returns=benchmark_returns,
             start_date=self.start_date,
             end_date=self.end_date,
+            closing_prices=closing_prices
         )
 
         return BacktestResult(
-            plot=combined_fig,
-            return_buyandhold=return_buyandhold,
-            dates=df.index,
+            dates=stock_df.index,
             metrics=metrics,
-            df=df,
+            stock_df=stock_df,
         )
 
+    def clean_df_index(self, stock_df: pd.DataFrame, benchmark_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        stock_df, benchmark_df = stock_df.align(benchmark_df, join="inner", axis=0)
+        combined = pd.concat(
+            [stock_df["adj close"], benchmark_df["adj close"]],
+            axis=1,
+            keys=["stock_close", "benchmark_close"]
+        )
+        cleaned = combined.dropna(subset=["stock_close", "benchmark_close"])
+        stock_df = stock_df.loc[cleaned.index]
+        benchmark_df = benchmark_df.loc[cleaned.index]
+        dict = {}
+        dict["stock_df"] = stock_df
+        dict["benchmark_df"] = benchmark_df
+        return dict
+
     def calculate_metrics(self, daily_returns,
-                          market_returns, 
+                          benchmark_returns, 
                           start_date: str | date | datetime, 
-                          end_date: str | date | datetime,) -> dict[str, Any]:
+                          end_date: str | date | datetime,
+                          closing_prices: pd.Series) -> dict[str, Any]:
         """Compute standard performance metrics from strategy and benchmark returns."""
         metrics = {}
+        metrics["buy_and_hold_return"] = MetricsCalculator.buy_and_hold_return(
+            closing_prices
+        )
         metrics["cagr"] = MetricsCalculator.cagr(
             daily_returns,
             start_date,
@@ -170,12 +150,12 @@ class Backtest:
         metrics["max_drawdown"] = MetricsCalculator.max_drawdown(daily_returns)
         metrics["alpha"] = MetricsCalculator.alpha(
             daily_returns,
-            market_returns,
+            benchmark_returns,
             risk_free_rate=0.0
         )
         metrics["beta"] = MetricsCalculator.beta(
             daily_returns,
-            market_returns
+            benchmark_returns
         )
         return metrics
 

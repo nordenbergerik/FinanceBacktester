@@ -55,12 +55,13 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
 
     metrics_called = {}
 
-    def fake_calculate_metrics(self, daily_returns, market_returns, start_date, end_date):
+    def fake_calculate_metrics(self, daily_returns, benchmark_returns, start_date, end_date, closing_prices):
         metrics_called["daily_returns"] = daily_returns.tolist()
-        metrics_called["market_returns"] = market_returns.tolist()
+        metrics_called["benchmark_returns"] = benchmark_returns.tolist()
         metrics_called["start_date"] = start_date
         metrics_called["end_date"] = end_date
-        return {"alpha": 0.5, "beta": 1.2}
+        metrics_called["closing_prices"] = closing_prices.tolist()
+        return {"buy_and_hold_return": 21.0, "cagr": 10.0}
 
     monkeypatch.setattr(backtest_module.Backtest, "calculate_metrics", fake_calculate_metrics)
 
@@ -77,14 +78,15 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
     result = backtest.run()
 
     np.testing.assert_allclose(backtest.portfolio_value, [100.0, 110.0, 121.0])
-    assert result.return_buyandhold == pytest.approx(21.0)
     assert list(result.dates) == list(prices.index)
-    assert result.metrics == {"alpha": 0.5, "beta": 1.2}
+    assert result.metrics == {"buy_and_hold_return": 21.0, "cagr": 10.0}
     assert metrics_called["start_date"] == pd.to_datetime("2024-01-01").date()
     assert metrics_called["end_date"] == pd.to_datetime("2024-01-03").date()
+    assert metrics_called["closing_prices"] == [100.0, 110.0, 121.0]
 
 
 def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
+    monkeypatch.setattr(backtest_module.MetricsCalculator, "buy_and_hold_return", lambda closing_prices: 12.34)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "cagr", lambda daily_returns, start_date, end_date: 11.11)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "sharpe", lambda daily_returns, risk_free_rate: 2.22)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "max_drawdown", lambda daily_returns: 0.33)
@@ -101,12 +103,14 @@ def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
     backtest = Backtest(config)
     metrics = backtest.calculate_metrics(
         daily_returns=pd.Series([0.0, 0.01, 0.02]),
-        market_returns=pd.Series([0.0, 0.005, 0.01]),
+        benchmark_returns=pd.Series([0.0, 0.005, 0.01]),
         start_date="2024-01-01",
         end_date="2024-01-03",
+        closing_prices=pd.Series([100.0, 110.0, 121.0]),
     )
 
     assert metrics == {
+        "buy_and_hold_return": 12.34,
         "cagr": 11.11,
         "sharpe": 2.22,
         "max_drawdown": 0.33,
@@ -162,13 +166,10 @@ def test_backtest_result_stores_completed_backtest_outputs():
     from engine.backtest import BacktestResult
 
     result = BacktestResult(
-        plot=DummyFigure(),
-        return_buyandhold=12.5,
         dates=pd.Index([pd.Timestamp("2024-01-01")]),
         metrics={"sharpe": 1.2},
-        df=pd.DataFrame({"adj close": [100.0]}),
+        stock_df=pd.DataFrame({"adj close": [100.0]}),
     )
 
-    assert result.return_buyandhold == 12.5
     assert result.metrics == {"sharpe": 1.2}
-    assert result.df.loc[0, "adj close"] == 100.0
+    assert result.stock_df.loc[0, "adj close"] == 100.0
