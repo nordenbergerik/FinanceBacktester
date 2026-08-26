@@ -2,12 +2,24 @@ from datetime import date, datetime
 from typing import TypeVar
 
 import numpy as np
+import pandas as pd
 
-from pandas import DataFrame
 
 
 class MetricsCalculator:
     """Utility methods for portfolio performance and risk metric calculation."""
+
+    @staticmethod
+    def buy_and_hold_return(closing_prices: pd.Series) -> float:
+        """
+        Calculate the total return from the first price to the last price in a series.
+
+        Returns:
+            Percentage return over the full holding period.
+        """
+        starting_price = closing_prices.iloc[0]
+        final_price = closing_prices.iloc[-1]
+        return ((final_price / starting_price) - 1) * 100
 
     @staticmethod
     def cagr(asset_returns, start_date: str | date | datetime, end_date: str | date | datetime) -> float:

@@ -102,10 +102,7 @@ class Backtest:
         # Convert daily strategy returns to percentage values for metric calculations.
         returns = strategy_returns.to_numpy() * 100
 
-        # Calculate the buy-and-hold return for the same period.
-        starting_price = closing_prices.iloc[0]
-        final_price = closing_prices.iloc[-1]
-        return_buyandhold = ((final_price / starting_price) - 1) * 100
+        return_buyandhold = MetricsCalculator.buy_and_hold_return(closing_prices=closing_prices)
 
         # Compute benchmark return series from the already aligned market data.
         market_closing_prices = market_df['adj close']
