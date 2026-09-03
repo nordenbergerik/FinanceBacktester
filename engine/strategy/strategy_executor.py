@@ -33,8 +33,6 @@ class StrategyExecutor(Strategy):
         """Evaluate the strategy's entry conditions for the supplied prices."""
         return self.__evaluate_entry_conditions__(df)
 
-
-
     def __evaluate_entry_conditions__(self, df: pd.DataFrame) -> pd.Series:
         """Combine all configured entry conditions into one boolean series."""
         entry_conditions = self.strategy.entry_rules.conditions
