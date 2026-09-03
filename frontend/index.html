@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f2ea">
+    <title>Signal Room | Finance Backtester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand"><span class="brand-mark">S</span><span>signal room</span></div>
+            <div class="eyebrow">Backtest engine</div>
+            <nav class="nav-list" aria-label="Primary navigation">
+                <a class="nav-item active" href="#run"><span class="nav-icon">↗</span>Configuration</a>
+            </nav>
+            <div class="sidebar-foot">
+                <div class="system-label"><span class="status-dot"></span>Engine ready</div>
+                <p>Backtests are submitted to the local FastAPI engine.</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div><span class="breadcrumb">WORKSPACE / BACKTESTS</span>
+                    <h1>Find the signal.</h1>
+                </div>
+                <div class="topbar-actions"><span class="live-pill"><span class="pulse"></span>API connected</span>
+                </div>
+            </header>
+
+            <section class="workspace-grid" id="run">
+                <section class="control-panel panel">
+                    <div class="section-heading">
+                        <div><span class="kicker">01 / configure</span>
+                            <h2>Run a new backtest</h2>
+                        </div><span class="step-number">01</span>
+                    </div>
+                    <form id="backtest-form">
+                        <label class="field-label" for="symbol">Asset</label>
+                        <div class="symbol-field"><span>$</span><input id="symbol" name="symbol" value="AAPL"
+                                maxlength="8" autocomplete="off"><span class="exchange">NASDAQ</span></div>
+                        <div class="field-row">
+                            <div><label class="field-label" for="start-date">Start date</label><input class="text-input"
+                                    type="date" id="start-date" name="start-date" value="2019-01-01"></div>
+                            <div><label class="field-label" for="end-date">End date</label><input class="text-input"
+                                    type="date" id="end-date" name="end-date" value="2024-01-01"></div>
+                        </div>
+                        <label class="field-label" for="capital">Starting capital</label>
+                        <div class="money-field"><span>$</span><input id="capital" name="capital" type="number"
+                                min="100" step="100" value="10000"><span class="currency">USD</span></div>
+                        <label class="field-label" for="strategy-select">Strategy implementation</label>
+                        <select class="text-input select-input" id="strategy-select" name="strategy">
+                            <option value="mock">Mockstrategy</option>
+                            <option value="rsi_mean_reversion">RSI mean reversion</option>
+                            <option value="sma_trend">SMA trend</option>
+                            <option value="ema_momentum">EMA momentum</option>
+                        </select>
+                        <div class="strategy-note"><span class="note-icon">i</span><span
+                                id="strategy-description">Two-day price momentum example strategy.</span></div>
+                        <button class="run-button" type="submit"><span>Run backtest</span><span
+                                class="button-arrow">↗</span></button>
+                        <p class="form-hint">Daily candles · S&amp;P 500 benchmark is used by the engine.</p>
+                    </form>
+                </section>
+                <section class="results-area panel unavailable-panel" id="results">
+                    <span class="kicker">02 / results</span>
+                    <h2 id="result-title">Run a backtest to see results</h2>
+                    <p id="result-status">Results are calculated by the backend and will appear here.</p>
+                    <div class="api-results" id="api-results" hidden>
+                        <div class="api-metrics" id="api-metrics"></div>
+                        <div class="price-summary"><span>Price series</span><strong id="price-count"></strong></div>
+                    </div>
+                </section>
+            </section>
+            <footer class="footer"><span>Signal Room / local workspace</span><span>Last calculated <strong
+                        id="footer-time">just now</strong></span></footer>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
