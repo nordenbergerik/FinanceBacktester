@@ -104,6 +104,9 @@ frontend/             Static browser interface
 tests/                Automated tests by subsystem
 ```
 
+## Screenshots
+![Project Screenshot](assets/images/financeBacktester-homescreen.png)
+
 ## Scope and Next Steps
 
 The current implementation is intentionally focused on a reliable single-run workflow. Natural next steps include persisted backtest history, transaction costs and slippage, richer chart serialization, asynchronous job execution for long data ranges, and HTTP-level API integration tests.
