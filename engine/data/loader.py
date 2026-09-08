@@ -71,7 +71,8 @@ class DataLoader:
         missing = {c for c in REQUIRED_COLUMNS if c not in df.columns}
         if missing:
             raise DataLoaderError(f"{symbol}: data is missing required columns: {missing}")
-        df = df[REQUIRED_COLUMNS].copy()
+        columns = REQUIRED_COLUMNS + (["close"] if "close" in df.columns else [])
+        df = df[columns].copy()
 
         df.index = pd.to_datetime(df.index).tz_localize(None)
         df.index.name = "timestamp"
@@ -107,7 +108,7 @@ class DataLoader:
                     open=row["open"],
                     high=row["high"],
                     low=row["low"],
-                    close=row["adj close"],
+                    close=row.get("close", row["adj close"]),
                     volume=row["volume"],
                 )
             except ValueError as e:

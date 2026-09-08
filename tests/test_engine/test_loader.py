@@ -107,6 +107,27 @@ def test_load_yfinance_uses_yf_download(monkeypatch):
     assert df.loc[pd.Timestamp("2024-01-01"), "adj close"] == 100.5
 
 
+def test_load_yfinance_keeps_adjusted_close_for_split_adjusted_data(monkeypatch):
+    def fake_download(tickers, start, end, auto_adjust):
+        return pd.DataFrame(
+            {
+                "Open": [100.0],
+                "High": [110.0],
+                "Low": [90.0],
+                "Close": [105.0],
+                "Adj Close": [52.5],
+                "Volume": [1_000],
+            },
+            index=pd.to_datetime(["2024-01-01"]),
+        )
+
+    monkeypatch.setattr("engine.data.loader.yf.download", fake_download)
+
+    df = DataLoader().load("AAPL", "2024-01-01", "2024-01-01", "yfinance")
+
+    assert df.loc[pd.Timestamp("2024-01-01"), "adj close"] == 52.5
+
+
 def test_load_unknown_source_raises():
     loader = DataLoader()
 
