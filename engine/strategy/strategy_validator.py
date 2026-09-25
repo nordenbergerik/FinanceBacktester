@@ -9,14 +9,14 @@ def validate_strategy(strategy):
     """
     try:
         x = StrategySchema(**strategy)
-        __validate_entry_exit_rules(strategy.get("entry_rules", {}))
-        __validate_entry_exit_rules(strategy.get("exit_rules", {}))
-        __validate_risk_management(strategy.get("risk_management", {}))
+        _validate_entry_exit_rules(strategy.get("entry_rules", {}))
+        _validate_entry_exit_rules(strategy.get("exit_rules", {}))
+        _validate_risk_management(strategy.get("risk_management", {}))
     except ValidationError as e:
         raise ValueError(f"Invalid strategy: {e}")
     
 
-def __validate_entry_exit_rules(rules):
+def _validate_entry_exit_rules(rules):
     """
     Validate the entry and exit rules of the strategy.
     Raises a ValueError if the rules are invalid.
@@ -41,7 +41,7 @@ def __validate_entry_exit_rules(rules):
         if not required_keys.issubset(condition.keys()):
             raise ValueError(f"Condition is missing required keys: {required_keys - set(condition.keys())}")    
 
-def __validate_risk_management(risk_rules):
+def _validate_risk_management(risk_rules):
     """
     Validate the risk management rules of the strategy.
     Raises a ValueError if the risk rules are invalid.

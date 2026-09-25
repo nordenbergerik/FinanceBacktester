@@ -164,7 +164,7 @@ class Backtest:
     def set_start_date(self, start_date: str | date | datetime):
         """Update the backtest start date, validating string input if needed."""
         if isinstance(start_date, str):
-            if Backtest.__validate_date_format__(start_date):
+            if Backtest._validate_date_format(start_date):
                 self.start_date = start_date
             else:
                 raise ValueError("Date string must be in YYYY-MM-DD format")
@@ -174,7 +174,7 @@ class Backtest:
     def set_end_date(self, end_date: str | date | datetime):
         """Update the backtest end date, validating string input if needed."""
         if isinstance(end_date, str):
-            if Backtest.__validate_date_format__(end_date):
+            if Backtest._validate_date_format(end_date):
                 self.end_date = end_date
             else:
                 raise ValueError("Date string must be in YYYY-MM-DD format")
@@ -182,7 +182,7 @@ class Backtest:
             self.end_date = end_date
 
     @staticmethod
-    def __validate_date_format__(date: str) ->  bool:
+    def _validate_date_format(date: str) ->  bool:
         """Check whether a string is a valid YYYY-MM-DD date format."""
         try:
             datetime.strptime(date, "%Y-%m-%d")

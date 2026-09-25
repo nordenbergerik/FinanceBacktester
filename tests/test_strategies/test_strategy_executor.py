@@ -34,7 +34,7 @@ def test_entry_conditions_return_index_aligned_boolean_series():
         )
     )
 
-    result = executor.__evaluate_entry_conditions__(prices)
+    result = executor._evaluate_entry_conditions(prices)
 
     pd.testing.assert_series_equal(result, pd.Series([False, True, False], index=index))
     assert result.dtype == bool
@@ -50,7 +50,7 @@ def test_or_logic_combines_conditions_row_by_row():
         )
     )
 
-    assert executor.__evaluate_entry_conditions__(prices).tolist() == [True, False, True]
+    assert executor._evaluate_entry_conditions(prices).tolist() == [True, False, True]
 
 
 def test_indicator_target_and_sma_condition_are_evaluated():
@@ -70,7 +70,7 @@ def test_indicator_target_and_sma_condition_are_evaluated():
         )
     )
 
-    result = executor.__evaluate_entry_conditions__(prices)
+    result = executor._evaluate_entry_conditions(prices)
 
     assert result.tolist() == [False, False, False]
 
@@ -100,7 +100,7 @@ def test_risk_management_returns_triggers_and_position_size():
         )
     )
 
-    stop_loss, take_profit, position_size = executor.__evaluate_risk_management__(prices)
+    stop_loss, take_profit, position_size = executor._evaluate_risk_management(prices)
 
     assert stop_loss.tolist() == [False, True, False, False]
     assert take_profit.tolist() == [False, False, True, True]
@@ -113,4 +113,4 @@ def test_invalid_logic_operator_is_rejected():
     )
 
     with pytest.raises(ValueError, match="Invalid logic operator"):
-        executor.__logic_operator__([pd.Series([True])], "XOR", pd.RangeIndex(1))
+        executor._logic_operator([pd.Series([True])], "XOR", pd.RangeIndex(1))

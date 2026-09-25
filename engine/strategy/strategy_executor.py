@@ -18,9 +18,9 @@ class StrategyExecutor(Strategy):
 
     def generate_signals(self, df: pd.DataFrame):
         """Generate position signals, including configured risk exits."""
-        entry_conditions = self.__evaluate_entry_conditions__(df)
-        exit_conditions = self.__evaluate_exit_conditions__(df)
-        stop_loss, take_profit, _ = self.__evaluate_risk_management__(df)
+        entry_conditions = self._evaluate_entry_conditions(df)
+        exit_conditions = self._evaluate_exit_conditions(df)
+        stop_loss, take_profit, _ = self._evaluate_risk_management(df)
         exit_conditions = exit_conditions | stop_loss | take_profit
 
         # Store the position state, so an entry is held until an exit occurs.
@@ -29,25 +29,25 @@ class StrategyExecutor(Strategy):
         positions.loc[exit_conditions] = 0.0
         return positions.ffill().fillna(0.0)
 
-    def __evaluate_strategy__(self, df: pd.DataFrame) -> pd.Series:
+    def _evaluate_strategy(self, df: pd.DataFrame) -> pd.Series:
         """Evaluate the strategy's entry conditions for the supplied prices."""
-        return self.__evaluate_entry_conditions__(df)
+        return self._evaluate_entry_conditions(df)
 
-    def __evaluate_entry_conditions__(self, df: pd.DataFrame) -> pd.Series:
+    def _evaluate_entry_conditions(self, df: pd.DataFrame) -> pd.Series:
         """Combine all configured entry conditions into one boolean series."""
         entry_conditions = self.strategy.entry_rules.conditions
         entry_logic_operator = self.strategy.entry_rules.logic
-        entry_results = [self.__evaluate_condition__(df, cond) for cond in entry_conditions]
-        return self.__logic_operator__(entry_results, entry_logic_operator, df.index)
+        entry_results = [self._evaluate_condition(df, cond) for cond in entry_conditions]
+        return self._logic_operator(entry_results, entry_logic_operator, df.index)
 
-    def __evaluate_exit_conditions__(self, df: pd.DataFrame) -> pd.Series:
+    def _evaluate_exit_conditions(self, df: pd.DataFrame) -> pd.Series:
         """Combine all configured exit conditions into one boolean series."""
         exit_conditions = self.strategy.exit_rules.conditions
         exit_logic_operator = self.strategy.exit_rules.logic
-        exit_results = [self.__evaluate_condition__(df, cond) for cond in exit_conditions]
-        return self.__logic_operator__(exit_results, exit_logic_operator, df.index)
+        exit_results = [self._evaluate_condition(df, cond) for cond in exit_conditions]
+        return self._logic_operator(exit_results, exit_logic_operator, df.index)
 
-    def __evaluate_risk_management__(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, float]:
+    def _evaluate_risk_management(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, float]:
         """Identify stop-loss and take-profit triggers from daily price returns."""
         closing_prices = df["adj close"]
         stop_loss_pct = self.strategy.risk_management.stop_loss_pct
@@ -64,7 +64,7 @@ class StrategyExecutor(Strategy):
             take_profit_triggered = pd.Series([False] * len(df), index=df.index)
         return stop_loss_triggered, take_profit_triggered, position_size
 
-    def __logic_operator__(self, results: list[pd.Series], operator: str, index) -> pd.Series:
+    def _logic_operator(self, results: list[pd.Series], operator: str, index) -> pd.Series:
         """Combine condition results row by row using AND or OR logic."""
         if not results:
             return pd.Series(False, index=index, dtype=bool)
@@ -77,12 +77,12 @@ class StrategyExecutor(Strategy):
         else:
             raise ValueError(f"Invalid logic operator: {operator}. Expected 'AND' or 'OR'.")
 
-    def __evaluate_condition__(self, df: pd.DataFrame, condition: Condition) -> pd.Series:
+    def _evaluate_condition(self, df: pd.DataFrame, condition: Condition) -> pd.Series:
         """Evaluate one condition against prices or a calculated indicator."""
         if condition.indicator == "PRICE":
             values = df["adj close"]
         else:
-            values = self.__calculate_indicator__(df, condition.indicator, condition.params)
+            values = self._calculate_indicator(df, condition.indicator, condition.params)
             if isinstance(values, pd.DataFrame):
                 component = condition.params.get("component", "macd")
                 if component not in values:
@@ -95,7 +95,7 @@ class StrategyExecutor(Strategy):
             target_name, separator, target_period = str(condition.target_value).partition("_")
             if not separator or not target_period.isdigit():
                 raise ValueError("Indicator targets must use the format 'INDICATOR_PERIOD'")
-            target = self.__calculate_indicator__(
+            target = self._calculate_indicator(
                 df,
                 target_name,
                 {"period": int(target_period)},
@@ -110,7 +110,7 @@ class StrategyExecutor(Strategy):
         }
         return comparisons[condition.operator].fillna(False).astype(bool)
 
-    def __calculate_indicator__(self, df: pd.DataFrame, indicator: IndicatorName, params: dict):
+    def _calculate_indicator(self, df: pd.DataFrame, indicator: IndicatorName, params: dict):
         """Dispatch an indicator name to its calculation function."""
         match indicator:
             case "SMA":

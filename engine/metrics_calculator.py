@@ -39,7 +39,7 @@ class MetricsCalculator:
 
         # Parse/normalize start and end dates
         if isinstance(start_date, str):
-            if MetricsCalculator.__is_valid_date__(start_date):
+            if MetricsCalculator._is_valid_date(start_date):
                 start = datetime.strptime(start_date, "%Y-%m-%d")
             else:
                 raise ValueError("Date string must be in YYYY-MM-DD format")
@@ -51,7 +51,7 @@ class MetricsCalculator:
             raise ValueError("start_date must be a string, date, or datetime")
 
         if isinstance(end_date, str):
-            if MetricsCalculator.__is_valid_date__(end_date):
+            if MetricsCalculator._is_valid_date(end_date):
                 end = datetime.strptime(end_date, "%Y-%m-%d")
             else:
                 raise ValueError("Date string must be in YYYY-MM-DD format")
@@ -70,7 +70,7 @@ class MetricsCalculator:
         return float(cagr)  # Convert to Python float
 
     @staticmethod
-    def __is_valid_date__(date_str: str | date | datetime) -> bool:
+    def _is_valid_date(date_str: str | date | datetime) -> bool:
         """Return True if the input is a valid date or valid YYYY-MM-DD string."""
         if isinstance(date_str, (date, datetime)):
             return True
