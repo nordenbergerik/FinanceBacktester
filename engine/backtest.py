@@ -157,6 +157,8 @@ class Backtest:
             daily_returns,
             benchmark_returns
         )
+        metrics["sortino_ratio"] = MetricsCalculator.sortino_ratio(asset_returns=daily_returns)
+        metrics["calmar_ratio"] = MetricsCalculator.calmar_ratio(asset_returns=daily_returns, start_date=start_date, end_date=end_date)
         return metrics
 
     def set_start_date(self, start_date: str | date | datetime):
