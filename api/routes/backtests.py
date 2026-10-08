@@ -46,8 +46,8 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 	return BacktestResponse(
 		symbol=config.symbol,
 		strategy=request.strategy,
-		start_date=request.start_date,
-		end_date=request.end_date,
+		start_date=result.start_date,
+		end_date=result.end_date,
 		metrics=metrics,
 		dates=dates,
 		prices=prices,

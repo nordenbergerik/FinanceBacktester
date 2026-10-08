@@ -34,7 +34,6 @@ class DataLoader:
             float columns: open, high, low, adj close, volume.
         """
 
-
         if source == "yfinance":
             raw = self._load_from_yfinance(symbol, start, end)
         elif source == "csv":
@@ -91,8 +90,6 @@ class DataLoader:
             if dropped:
                 print(f"{symbol}: dropped {dropped} row(s) containing NaNs")
         return df   
-
-    def 
 
     def _filter_date_range(self, df: pd.DataFrame, start: str | date | datetime, end: str | date | datetime) -> pd.DataFrame:
         """Return only rows whose timestamps fall within the requested range."""

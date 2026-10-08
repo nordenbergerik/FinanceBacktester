@@ -18,8 +18,10 @@ from plotly.graph_objs import Figure
 
 @dataclass
 class BacktestResult:
-    """Stores backtest results including dates, metrics, and raw data."""
+    """Stores backtest results including the effective date range, metrics, and raw data."""
     dates: date
+    start_date: date
+    end_date: date
     metrics: dict[str, Any]
     stock_df: DataFrame
 
@@ -70,6 +72,11 @@ class Backtest:
         stock_df = cleaned_dataframes.get("stock_df")
         benchmark_df = cleaned_dataframes.get("benchmark_df")
 
+        actual_start_date = stock_df.index.min().date()
+        actual_end_date = stock_df.index.max().date()
+        self.start_date = actual_start_date
+        self.end_date = actual_end_date
+
         signals = self.strategy.generate_signals(stock_df)
         closing_prices = stock_df['adj close']
 
@@ -109,11 +116,18 @@ class Backtest:
 
         return BacktestResult(
             dates=stock_df.index,
+            start_date=self.start_date,
+            end_date=self.end_date,
             metrics=metrics,
             stock_df=stock_df,
         )
 
     def clean_df_index(self, stock_df: pd.DataFrame, benchmark_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Align the stock and benchmark dataframes on a shared date index and drop incomplete rows.
+
+        This ensures the strategy and benchmark comparisons use the same trading days and
+        prevents NaN values from skewing performance calculations.
+        """
         stock_df, benchmark_df = stock_df.align(benchmark_df, join="inner", axis=0)
         combined = pd.concat(
             [stock_df["adj close"], benchmark_df["adj close"]],
@@ -123,6 +137,7 @@ class Backtest:
         cleaned = combined.dropna(subset=["stock_close", "benchmark_close"])
         stock_df = stock_df.loc[cleaned.index]
         benchmark_df = benchmark_df.loc[cleaned.index]
+
         dict = {}
         dict["stock_df"] = stock_df
         dict["benchmark_df"] = benchmark_df

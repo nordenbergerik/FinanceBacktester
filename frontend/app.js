@@ -8,6 +8,10 @@ const strategyDescription = document.getElementById('strategy-description');
 
 const apiBaseUrl = window.BACKTEST_API_URL || 'http://localhost:8000';
 
+/**
+ * Fetches the available backtest strategies from the API and populates the strategy dropdown.
+ * It also stores each strategy's description for later display when the user changes selection.
+ */
 function loadStrategies() {
     fetch(`${apiBaseUrl}/api/backtests/strategies`)
         .then((response) => {
@@ -26,7 +30,19 @@ function loadStrategies() {
         .catch(() => { });
 }
 
+/**
+ * Renders a completed backtest result in the UI by updating the title, status, metric cards,
+ * and number of observations shown to the user.
+ *
+ * @param {Object} result - The backtest result payload returned by the API.
+ */
 function renderResults(result) {
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+
+    if (startDateInput && result.start_date) startDateInput.value = result.start_date;
+    if (endDateInput && result.end_date) endDateInput.value = result.end_date;
+
     resultTitle.textContent = `${result.symbol} backtest results`;
     resultStatus.textContent = `${result.strategy} · ${result.start_date} to ${result.end_date}`;
     document.getElementById('api-metrics').innerHTML = Object.entries(result.metrics)
@@ -36,6 +52,12 @@ function renderResults(result) {
     apiResults.hidden = false;
 }
 
+/**
+ * Handles form submission by building the backtest payload, sending it to the API,
+ * updating the UI while the request is running, and showing either the result or an error.
+ *
+ * @param {Event} event - The submit event triggered by the form.
+ */
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     const formData = new FormData(form);
@@ -69,8 +91,13 @@ form.addEventListener('submit', (event) => {
 
 submitButton.disabled = false;
 submitButton.querySelector('span').textContent = 'Run backtest';
+
+/**
+ * Updates the strategy description text when the selected strategy changes.
+ */
 strategySelect.addEventListener('change', () => {
     const descriptions = JSON.parse(strategySelect.dataset.descriptions || '{}');
     strategyDescription.textContent = descriptions[strategySelect.value] || strategyDescription.textContent;
 });
+
 loadStrategies();
