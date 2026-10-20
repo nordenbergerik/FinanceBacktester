@@ -8,7 +8,8 @@ A modular Python backtesting platform with a FastAPI service and a lightweight b
 - Pydantic validation for API requests, strategy definitions, dates, symbols, and capital.
 - Historical data loaded through `yfinance`, normalized into validated OHLCV data, and aligned with an S&P 500 benchmark.
 - Strategy presets for price momentum, RSI mean reversion, SMA trend following, and EMA momentum.
-- Performance metrics including buy-and-hold return, CAGR, Sharpe ratio, maximum drawdown, alpha, and beta.
+- Performance metrics including buy-and-hold return, CAGR, Sharpe and Sortino ratios, maximum drawdown, alpha, beta, and Calmar ratio.
+- Interactive Plotly performance chart comparing the stock, S&P 500 benchmark, and strategy cumulative returns.
 - FastAPI endpoints with CORS support for the static frontend.
 - Automated test coverage for the API contract, strategy presets, engine, indicators, and backtest behavior.
 
@@ -24,12 +25,12 @@ DataLoader -> validated OHLCV DataFrame
 Strategy / StrategyExecutor -> position signals
 	|
 	v
-Backtest -> portfolio values and metrics
+Backtest -> portfolio values, metrics, and performance chart
 	|
 	+-> FastAPI -> browser frontend
 ```
 
-The core engine is independent of the web layer. A `BacktestConfig` describes a run, while `Backtest` performs the calculation and returns a `BacktestResult`. The API serializes that result into JSON for the frontend.
+The core engine is independent of the web layer. A `BacktestConfig` describes a run, while `Backtest` performs the calculation and returns a `BacktestResult`, including a Plotly `performance_chart`. The API serializes the chart's Plotly data and layout to JSON for the frontend, which renders it with Plotly.js.
 
 ## Strategies
 
@@ -66,6 +67,9 @@ The backtest response includes:
 - Calculated metrics
 - Daily dates and adjusted closing prices
 - Daily portfolio values
+- A `performance_chart` object with Plotly `data` and `layout` for rendering the stock, benchmark, and strategy cumulative returns
+
+The static frontend displays this chart after a successful backtest. It uses Plotly.js from the Plotly CDN, so the browser needs access to that CDN.
 
 ## Run Locally
 
@@ -89,7 +93,7 @@ The `start-app` command launches both the FastAPI server and the static frontend
 python -m pytest -q
 ```
 
-The test suite covers API request validation and response serialization, data models and loading, indicator calculations, strategy execution, backtest portfolio behavior, and metrics. The current suite contains 55 passing tests.
+The test suite covers API request validation and response serialization, data models and loading, indicator calculations, strategy execution, backtest portfolio behavior, chart output, and metrics. The current suite contains 56 passing tests.
 
 ## Project Structure
 
@@ -105,7 +109,7 @@ tests/                Automated tests by subsystem
 ```
 
 ## Screenshots
-![Project Screenshot](assets/images/financeBacktester-homescreen.png)
+![Project Screenshot](assets/images/performanceChart.png)
 
 ## Scope and Next Steps
 
