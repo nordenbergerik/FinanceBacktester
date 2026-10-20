@@ -1,6 +1,7 @@
 from datetime import date
 
 import pandas as pd
+import plotly.graph_objs as go
 import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -74,7 +75,12 @@ def test_run_backtest_serializes_engine_result(monkeypatch):
                 {
                     "metrics": {"sharpe": 1.25},
                     "dates": index,
+                    "start_date": index.min().date(),
+                    "end_date": index.max().date(),
                     "stock_df": pd.DataFrame({"adj close": [100.0, 101.5]}, index=index),
+                    "performance_chart": go.Figure(
+                        data=[go.Scatter(x=index, y=[1.0, 1.015], name="Strategy")]
+                    ),
                 },
             )()
 
@@ -96,3 +102,4 @@ def test_run_backtest_serializes_engine_result(monkeypatch):
     assert result.dates == [date(2024, 1, 1), date(2024, 1, 2)]
     assert result.prices == [100.0, 101.5]
     assert result.portfolio_values == [1000.0, 1015.0]
+    assert result.performance_chart["data"][0]["name"] == "Strategy"

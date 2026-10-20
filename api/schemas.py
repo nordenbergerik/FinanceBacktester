@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -35,3 +35,4 @@ class BacktestResponse(BaseModel):
 	dates: list[date]
 	prices: list[float]
 	portfolio_values: list[float]
+	performance_chart: dict[str, Any]

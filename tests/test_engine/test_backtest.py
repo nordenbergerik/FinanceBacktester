@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
 import pytest
 
 import engine.backtest as backtest_module
@@ -15,19 +16,6 @@ class FakeStrategy(Strategy):
 
     def generate_signals(self, df: pd.DataFrame) -> pd.Series:
         return pd.Series(self.signals, index=df.index)
-
-
-class DummyFigure:
-    def __init__(self):
-        self.traces = []
-
-    def add_scatter(self, **kwargs):
-        self.traces.append(kwargs)
-
-
-class DummyPlot:
-    def line(self, title=None):
-        return DummyFigure()
 
 
 class FakeLoader(DataLoader):
@@ -49,9 +37,6 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
         {"adj close": [200.0, 198.0, 202.0]},
         index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
     )
-
-    monkeypatch.setattr(backtest_module, "DataLoader", lambda: FakeLoader({"TEST": prices, "^GSPC": market_prices}))
-    monkeypatch.setattr(backtest_module, "px", DummyPlot())
 
     metrics_called = {}
 
@@ -80,6 +65,15 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
     np.testing.assert_allclose(backtest.portfolio_value, [100.0, 110.0, 121.0])
     assert list(result.dates) == list(prices.index)
     assert result.metrics == {"buy_and_hold_return": 21.0, "cagr": 10.0}
+    assert [trace.name for trace in result.performance_chart.data] == [
+        "Stock (Buy & Hold)",
+        "Benchmark (S&P 500)",
+        "Strategy",
+    ]
+    np.testing.assert_allclose(result.performance_chart.data[0].y, [1.0, 1.1, 1.21])
+    np.testing.assert_allclose(result.performance_chart.data[1].y, [1.0, 0.99, 1.01])
+    np.testing.assert_allclose(result.performance_chart.data[2].y, [1.0, 1.1, 1.21])
+    assert result.performance_chart.layout.title.text == "Strategy vs Benchmark Performance"
     assert metrics_called["start_date"] == pd.to_datetime("2024-01-01").date()
     assert metrics_called["end_date"] == pd.to_datetime("2024-01-03").date()
     assert metrics_called["closing_prices"] == [100.0, 110.0, 121.0]
@@ -87,11 +81,13 @@ def test_backtest_run_builds_expected_portfolio_and_buy_and_hold(monkeypatch):
 
 def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
     monkeypatch.setattr(backtest_module.MetricsCalculator, "buy_and_hold_return", lambda closing_prices: 12.34)
-    monkeypatch.setattr(backtest_module.MetricsCalculator, "cagr", lambda daily_returns, start_date, end_date: 11.11)
+    monkeypatch.setattr(backtest_module.MetricsCalculator, "cagr", lambda asset_returns, start_date, end_date: 11.11)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "sharpe", lambda daily_returns, risk_free_rate: 2.22)
-    monkeypatch.setattr(backtest_module.MetricsCalculator, "max_drawdown", lambda daily_returns: 0.33)
+    monkeypatch.setattr(backtest_module.MetricsCalculator, "max_drawdown", lambda asset_returns: 0.33)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "alpha", lambda asset_returns, market_returns, risk_free_rate: 0.44)
     monkeypatch.setattr(backtest_module.MetricsCalculator, "beta", lambda asset_returns, market_returns: 0.55)
+    monkeypatch.setattr(backtest_module.MetricsCalculator, "sortino_ratio", lambda asset_returns: 0.66)
+    monkeypatch.setattr(backtest_module.MetricsCalculator, "calmar_ratio", lambda asset_returns, start_date, end_date: 0.77)
 
     config = BacktestConfig(
         strategy=FakeStrategy([0]),
@@ -116,6 +112,8 @@ def test_calculate_metrics_uses_metrics_calculator(monkeypatch):
         "max_drawdown": 0.33,
         "alpha": 0.44,
         "beta": 0.55,
+        "sortino_ratio": 0.66,
+        "calmar_ratio": 0.77,
     }
 
 
@@ -167,8 +165,11 @@ def test_backtest_result_stores_completed_backtest_outputs():
 
     result = BacktestResult(
         dates=pd.Index([pd.Timestamp("2024-01-01")]),
+        start_date=pd.Timestamp("2024-01-01").date(),
+        end_date=pd.Timestamp("2024-01-01").date(),
         metrics={"sharpe": 1.2},
         stock_df=pd.DataFrame({"adj close": [100.0]}),
+        performance_chart=go.Figure(),
     )
 
     assert result.metrics == {"sharpe": 1.2}

@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, HTTPException
 
 from api.schemas import BacktestRequest, BacktestResponse, StrategySummary
@@ -42,6 +44,7 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 	metrics = {name: float(value) for name, value in result.metrics.items()}
 	dates = [timestamp.date() for timestamp in result.dates]
 	prices = [float(value) for value in result.stock_df["adj close"].tolist()]
+	performance_chart = json.loads(result.performance_chart.to_json())
 
 	return BacktestResponse(
 		symbol=config.symbol,
@@ -52,4 +55,5 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 		dates=dates,
 		prices=prices,
 		portfolio_values=[float(value) for value in backtest.portfolio_value],
+		performance_chart=performance_chart,
 	)

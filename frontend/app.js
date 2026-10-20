@@ -43,6 +43,13 @@ function renderResults(result) {
     if (startDateInput && result.start_date) startDateInput.value = result.start_date;
     if (endDateInput && result.end_date) endDateInput.value = result.end_date;
 
+    Plotly.react(
+        'performance-chart',
+        result.performance_chart.data,
+        result.performance_chart.layout,
+        { responsive: true }
+    );
+
     resultTitle.textContent = `${result.symbol} backtest results`;
     resultStatus.textContent = `${result.strategy} · ${result.start_date} to ${result.end_date}`;
     document.getElementById('api-metrics').innerHTML = Object.entries(result.metrics)

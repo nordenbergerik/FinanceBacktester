@@ -2,6 +2,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
 
 from pandas import DataFrame
 
@@ -13,9 +14,6 @@ from datetime import date, datetime
 from engine.metrics_calculator import MetricsCalculator
 from indicators import sma
 
-import plotly.express as px
-from plotly.graph_objs import Figure
-
 @dataclass
 class BacktestResult:
     """Stores backtest results including the effective date range, metrics, and raw data."""
@@ -24,6 +22,7 @@ class BacktestResult:
     end_date: date
     metrics: dict[str, Any]
     stock_df: DataFrame
+    performance_chart: go.Figure
 
 class Backtest:
     config: BacktestConfig
@@ -91,11 +90,14 @@ class Backtest:
         # only when the position was held at the start of the day.
         strategy_returns = positions.shift(1).fillna(0) * price_returns
 
+        # Calculate the cumulative return (starting at 1.0)
+        strategy_cum_returns = (1 + strategy_returns).cumprod()
+
         # Reconstruct portfolio equity growth from the strategy returns.
         initial_value = self.cash
         portfolio_log_returns = np.log(1 + strategy_returns)
         self.portfolio_value = initial_value * np.exp(portfolio_log_returns.cumsum())
-        roi = (np.exp(portfolio_log_returns.cumsum()) - 1) * 100
+        
 
         # Convert daily strategy returns to percentage values for metric calculations.
         returns = strategy_returns.to_numpy() * 100
@@ -103,8 +105,9 @@ class Backtest:
         # Compute benchmark return series from the already aligned benchmark data.
         benchmark_closing_prices = benchmark_df['adj close']
         benchmark_returns = benchmark_closing_prices.pct_change().fillna(0)
-        benchmark_returns_log = np.log(1 + benchmark_returns)
-        benchmark_returns_roi = (np.exp(benchmark_returns_log.cumsum()) - 1) * 100
+
+        # Calculate the cumulative return (starting at 1.0)
+        benchmark_cum_returns = (1 + benchmark_returns).cumprod()
 
         metrics = self.calculate_metrics(
             daily_returns=strategy_returns,
@@ -114,13 +117,60 @@ class Backtest:
             closing_prices=closing_prices
         )
 
+#----------------------------------------------------------------
+        # Cumulative returns (starts at 1.0)
+        stock_cum_returns = (1 + price_returns).cumprod()
+        performance_chart = self._create_performance_chart(
+            stock_cum_returns=stock_cum_returns, 
+            benchmark_cum_returns=benchmark_cum_returns,
+            strategy_cum_returns=strategy_cum_returns,
+        )
+    
         return BacktestResult(
             dates=stock_df.index,
             start_date=self.start_date,
             end_date=self.end_date,
             metrics=metrics,
             stock_df=stock_df,
+            performance_chart=performance_chart,
         )
+
+    def _create_performance_chart(self, stock_cum_returns: pd.Series, benchmark_cum_returns: pd.Series, strategy_cum_returns: pd.Series) -> go.Figure:
+        performance_chart = go.Figure()
+        performance_chart.add_trace(
+            go.Scatter(
+                x=stock_cum_returns.index, 
+                y=stock_cum_returns,
+                name="Stock (Buy & Hold)",
+                line=dict(color="#6366F1")
+            )
+        )
+        performance_chart.add_trace(
+            go.Scatter(
+                x=benchmark_cum_returns.index,
+                y=benchmark_cum_returns,
+                name="Benchmark (S&P 500)",
+                line=dict(color="#64748B", dash="dash"),  # Ex: Grå streckad
+            )
+        )
+        performance_chart.add_trace(
+            go.Scatter(
+                x=strategy_cum_returns.index,
+                y=strategy_cum_returns,
+                name="Strategy",
+                line=dict(color="#10B981", width=2),  # Ex: Grön tjockare linje
+            )
+        )
+
+        performance_chart.update_layout(
+            title="Strategy vs Benchmark Performance",
+            xaxis_title="Date",
+            yaxis_title="Cumulative Return",
+            hovermode="x unified",
+            template="plotly_white",
+        )
+        return performance_chart
+#----------------------------------------------------------------------
 
     def clean_df_index(self, stock_df: pd.DataFrame, benchmark_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """Align the stock and benchmark dataframes on a shared date index and drop incomplete rows.

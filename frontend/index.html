@@ -12,6 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
 
 <body>
@@ -75,6 +76,7 @@
                     <span class="kicker">02 / results</span>
                     <h2 id="result-title">Run a backtest to see results</h2>
                     <p id="result-status">Results are calculated by the backend and will appear here.</p>
+                    <div id="performance-chart"></div>
                     <div class="api-results" id="api-results" hidden>
                         <div class="api-metrics" id="api-metrics"></div>
                         <div class="price-summary"><span>Price series</span><strong id="price-count"></strong></div>
