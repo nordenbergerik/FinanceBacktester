@@ -13,6 +13,9 @@ A modular Python backtesting platform with a FastAPI service and a lightweight b
 - FastAPI endpoints with CORS support for the static frontend.
 - Automated test coverage for the API contract, strategy presets, engine, indicators, and backtest behavior.
 
+## Screenshots
+![Project Screenshot](assets/images/backtester-homepage.png)
+
 ## Architecture
 
 ```text
@@ -108,8 +111,7 @@ frontend/             Static browser interface
 tests/                Automated tests by subsystem
 ```
 
-## Screenshots
-![Project Screenshot](assets/images/performanceChart.png)
+
 
 ## Scope and Next Steps
 
