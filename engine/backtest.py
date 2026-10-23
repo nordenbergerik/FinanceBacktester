@@ -150,7 +150,7 @@ class Backtest:
                 x=benchmark_cum_returns.index,
                 y=benchmark_cum_returns,
                 name="Benchmark (S&P 500)",
-                line=dict(color="#64748B", dash="dash"),  # Ex: Grå streckad
+                line=dict(color="#64748B"),  # Ex: Grå streckad
             )
         )
         performance_chart.add_trace(
@@ -158,7 +158,7 @@ class Backtest:
                 x=strategy_cum_returns.index,
                 y=strategy_cum_returns,
                 name="Strategy",
-                line=dict(color="#10B981", width=2),  # Ex: Grön tjockare linje
+                line=dict(color="#10B981"),  # Ex: Grön tjockare linje
             )
         )
 
