@@ -16,6 +16,7 @@ A modular Python backtesting platform with a FastAPI service and a lightweight b
 
 ## Screenshots
 ![Project Screenshot](assets/images/backtester-homepage.png)
+![Project Screenshot](assets/images/backtester-aiStudio.png)
 
 ## Architecture
 
