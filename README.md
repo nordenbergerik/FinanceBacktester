@@ -64,6 +64,52 @@ Start a backtest with `POST /api/backtests`:
 
 Available strategies are returned by `GET /api/backtests/strategies`. A health check is available at `GET /health`, and interactive API documentation is served at `/docs`.
 
+To run a generated strategy, first send a prompt to `POST /api/backtests/generateStrategy`. Put the returned strategy object in the `strategy` field of `POST /api/backtests`:
+
+```json
+{
+  "symbol": "AAPL",
+  "start_date": "2019-01-01",
+  "end_date": "2024-01-01",
+  "cash": 10000,
+  "strategy": {
+    "name": "Generated RSI strategy",
+    "description": "Buy below RSI 30 and sell above RSI 70.",
+    "entry_rules": {
+      "logic": "AND",
+      "conditions": [
+        {
+          "indicator": "RSI",
+          "params": {"period": 14},
+          "operator": "<",
+          "target_type": "value",
+          "target_value": 30
+        }
+      ]
+    },
+    "exit_rules": {
+      "logic": "OR",
+      "conditions": [
+        {
+          "indicator": "RSI",
+          "params": {"period": 14},
+          "operator": ">",
+          "target_type": "value",
+          "target_value": 70
+        }
+      ]
+    },
+    "risk_management": {
+      "stop_loss_pct": null,
+      "take_profit_pct": null,
+      "position_size": 1.0
+    }
+  }
+}
+```
+
+`strategy` can still be a preset ID such as `"rsi_mean_reversion"`; when it is an object, it is validated and run as a custom strategy.
+
 The backtest response includes:
 
 - The normalized symbol, selected strategy, and date range

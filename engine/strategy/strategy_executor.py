@@ -79,12 +79,13 @@ class StrategyExecutor(Strategy):
 
     def _evaluate_condition(self, df: pd.DataFrame, condition: Condition) -> pd.Series:
         """Evaluate one condition against prices or a calculated indicator."""
+        params = condition.params.model_dump(exclude_none=True)
         if condition.indicator == "PRICE":
             values = df["adj close"]
         else:
-            values = self._calculate_indicator(df, condition.indicator, condition.params)
+            values = self._calculate_indicator(df, condition.indicator, params)
             if isinstance(values, pd.DataFrame):
-                component = condition.params.get("component", "macd")
+                component = params.get("component", "macd")
                 if component not in values:
                     raise ValueError(f"Invalid MACD component: '{component}'")
                 values = values[component]

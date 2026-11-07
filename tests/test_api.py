@@ -10,6 +10,7 @@ import api.routes.backtests as backtests_module
 from api.routes.backtests import list_strategies, run_backtest
 from api.schemas import BacktestRequest
 from engine.strategy.examples.presets import get_strategy_preset
+from engine.strategy.strategy_schema import StrategySchema
 from engine.strategy.strategy_executor import StrategyExecutor
 
 
@@ -45,6 +46,46 @@ def test_strategy_list_matches_registered_presets():
 def test_backtest_request_rejects_invalid_values(payload):
     with pytest.raises(ValidationError):
         BacktestRequest(**payload)
+
+
+def test_backtest_request_accepts_generated_strategy():
+    request = BacktestRequest(
+        symbol="AAPL",
+        start_date="2024-01-01",
+        end_date="2024-01-02",
+        cash=1000,
+        strategy={
+            "name": "Generated RSI strategy",
+            "description": "Enter and exit using RSI.",
+            "entry_rules": {
+                "logic": "AND",
+                "conditions": [
+                    {
+                        "indicator": "RSI",
+                        "params": {"period": 14},
+                        "operator": "<",
+                        "target_type": "value",
+                        "target_value": 30,
+                    }
+                ],
+            },
+            "exit_rules": {
+                "logic": "OR",
+                "conditions": [
+                    {
+                        "indicator": "RSI",
+                        "params": {"period": 14},
+                        "operator": ">",
+                        "target_type": "value",
+                        "target_value": 70,
+                    }
+                ],
+            },
+        },
+    )
+
+    assert isinstance(request.strategy, StrategySchema)
+    assert request.strategy.name == "Generated RSI strategy"
 
 
 def test_run_backtest_rejects_reversed_dates():
@@ -103,3 +144,74 @@ def test_run_backtest_serializes_engine_result(monkeypatch):
     assert result.prices == [100.0, 101.5]
     assert result.portfolio_values == [1000.0, 1015.0]
     assert result.performance_chart["data"][0]["name"] == "Strategy"
+
+
+def test_run_backtest_executes_generated_strategy(monkeypatch):
+    index = pd.to_datetime(["2024-01-01", "2024-01-02"])
+    captured_configs = []
+    custom_strategy = {
+        "name": "Generated RSI strategy",
+        "description": "Enter and exit using RSI.",
+        "entry_rules": {
+            "logic": "AND",
+            "conditions": [
+                {
+                    "indicator": "RSI",
+                    "params": {"period": 14},
+                    "operator": "<",
+                    "target_type": "value",
+                    "target_value": 30,
+                }
+            ],
+        },
+        "exit_rules": {
+            "logic": "OR",
+            "conditions": [
+                {
+                    "indicator": "RSI",
+                    "params": {"period": 14},
+                    "operator": ">",
+                    "target_type": "value",
+                    "target_value": 70,
+                }
+            ],
+        },
+    }
+
+    class FakeBacktest:
+        def __init__(self, config):
+            captured_configs.append(config)
+            self.portfolio_value = [1000.0, 1015.0]
+
+        def run(self):
+            return type(
+                "FakeResult",
+                (),
+                {
+                    "metrics": {"sharpe": 1.25},
+                    "dates": index,
+                    "start_date": index.min().date(),
+                    "end_date": index.max().date(),
+                    "stock_df": pd.DataFrame({"adj close": [100.0, 101.5]}, index=index),
+                    "performance_chart": go.Figure(
+                        data=[go.Scatter(x=index, y=[1.0, 1.015], name="Strategy")]
+                    ),
+                },
+            )()
+
+    monkeypatch.setattr(backtests_module, "Backtest", FakeBacktest)
+
+    result = run_backtest(
+        BacktestRequest(
+            symbol="AAPL",
+            start_date="2024-01-01",
+            end_date="2024-01-02",
+            cash=1000,
+            strategy=custom_strategy,
+        )
+    )
+
+    assert result.strategy == "Generated RSI strategy"
+    assert len(captured_configs) == 1
+    assert isinstance(captured_configs[0].strategy, StrategyExecutor)
+    assert captured_configs[0].strategy.strategy.name == "Generated RSI strategy"

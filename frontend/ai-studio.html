@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f2ea">
+    <title>Finance Backtester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="ai-studio.css">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="ai-studio.js" defer></script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand"><span class="brand-mark">F</span><span>Finance Backtester</span></div>
+            <div class="eyebrow">AI Studio</div>
+            <nav class="nav-list" aria-label="Primary navigation">
+                <a class="nav-item active" href="index.html"><span class="nav-icon">↗</span>Configuration</a>
+                <a class="nav-item active" href="ai-studio.html"><span class="nav-icon">#</span>AI Studio</a>
+            </nav>
+            <div class="sidebar-foot">
+                <div class="system-label"><span class="status-dot"></span>Engine ready</div>
+                <p>Backtests are submitted to the local FastAPI engine.</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div><span class="breadcrumb">FINANCE / AI Studio</span>
+                    <h1>AI Studio.</h1>
+                </div>
+                <div class="topbar-actions">
+                    <span class="live-pill"><span class="pulse"></span>API connected</span>
+                </div>
+            </header>
+
+
+            <form class="strategy-chat-container" id="strategy-form">
+                <h3>Create a strategy with AI</h3>
+
+                <label for="strategyInput">Describe your strategy</label>
+                <textarea id="strategyInput" name="prompt" rows="5"
+                    placeholder="Buy when RSI is under 30 and sell when it's over 70..."></textarea>
+
+                <button id="generateBtn" type="submit">Generate strategy</button>
+                <p id="ai-status" role="status"></p>
+            </form>
+
+            <footer class="footer">
+                <span>Finance Backtester / local workspace</span>
+            </footer>
+        </main>
+    </div>
+</body>
+
+</html>
