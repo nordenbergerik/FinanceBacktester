@@ -67,16 +67,37 @@ function renderResults(result) {
  */
 form.addEventListener('submit', (event) => {
     event.preventDefault();
+
+    const clickedButton = event.submitter || submitButton;
+    const action = clickedButton.value || 'runStrategy';
     const formData = new FormData(form);
+    let strategy = formData.get('strategy');
+
+    if (action === 'runGeneratedStrategy') {
+        const savedStrategy = localStorage.getItem('generatedStrategy');
+        if (!savedStrategy) {
+            resultStatus.textContent = 'Generate a strategy in AI Studio before running it.';
+            return;
+        }
+
+        try {
+            strategy = JSON.parse(savedStrategy);
+        } catch (error) {
+            resultStatus.textContent = `Could not read the generated strategy: ${error.message}`;
+            return;
+        }
+    }
+
     const payload = {
         symbol: formData.get('symbol'),
         start_date: formData.get('start-date'),
         end_date: formData.get('end-date'),
         cash: Number(formData.get('capital')),
-        strategy: formData.get('strategy')
+        strategy
     };
-    submitButton.disabled = true;
-    submitButton.querySelector('span').textContent = 'Running backtest...';
+
+    clickedButton.disabled = true;
+    clickedButton.querySelector('span').textContent = 'Running backtest...';
     resultStatus.textContent = 'Loading data and calculating metrics...';
     fetch(`${apiBaseUrl}/api/backtests`, {
         method: 'POST',
@@ -91,8 +112,9 @@ form.addEventListener('submit', (event) => {
         .then(renderResults)
         .catch((error) => { resultStatus.textContent = error.message; })
         .finally(() => {
-            submitButton.disabled = false;
-            submitButton.querySelector('span').textContent = 'Run backtest';
+            clickedButton.disabled = false;
+            clickedButton.querySelector('span').textContent =
+                action === 'runGeneratedStrategy' ? 'Run generated strategy' : 'Run backtest';
         });
 });
 

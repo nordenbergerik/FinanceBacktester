@@ -1,13 +1,26 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal, Union, List, Optional
 
 OperatorType = Literal["<", ">", "==", "<=", ">="]
 IndicatorName = Literal["PRICE", "SMA", "EMA", "RSI", "MACD", "BOLLINGER_UPPER", "BOLLINGER_MIDDLE", "BOLLINGER_LOWER"]
 
+class IndicatorParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    period: Optional[int] = Field(default=None, description="Window size for a single-period indicator")
+    fast_period: Optional[int] = Field(default=None, description="Fast MACD EMA window")
+    slow_period: Optional[int] = Field(default=None, description="Slow MACD EMA window")
+    signal_period: Optional[int] = Field(default=None, description="MACD signal EMA window")
+    num_std_dev: Optional[float] = Field(default=None, description="Bollinger band standard deviation multiplier")
+    component: Optional[Literal["macd", "signal", "histogram"]] = Field(
+        default=None,
+        description="MACD series to compare",
+    )
+
 # Model for a single condition (e.g., RSI < 30)
 class Condition(BaseModel):
     indicator: IndicatorName = Field(description="Indicator to be evaluated")
-    params: dict = Field(default_factory=dict, description="Parameters for the indicator, e.g. {'period': 14}")
+    params: IndicatorParams = Field(default_factory=IndicatorParams, description="Parameters for the indicator")
     operator: OperatorType = Field(description="Comparison operator")
     target_type: Literal["value", "indicator"] = Field(description="Whether comparison is against a fixed value or another indicator")
     target_value: Union[float, str] = Field(description="Numeric threshold (e.g., 30) or the name of another indicator (e.g., 'SMA_200')")

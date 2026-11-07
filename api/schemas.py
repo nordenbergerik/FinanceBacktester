@@ -3,6 +3,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from engine.strategy.strategy_schema import StrategySchema
+
 StrategyId = Literal["mock", "rsi_mean_reversion", "sma_trend", "ema_momentum"]
 
 
@@ -13,7 +15,7 @@ class BacktestRequest(BaseModel):
 	start_date: date
 	end_date: date
 	cash: float = Field(gt=0)
-	strategy: StrategyId = "mock"
+	strategy: StrategyId | StrategySchema = "mock"
 
 
 class StrategySummary(BaseModel):
@@ -36,3 +38,8 @@ class BacktestResponse(BaseModel):
 	prices: list[float]
 	portfolio_values: list[float]
 	performance_chart: dict[str, Any]
+
+class PromptRequest(BaseModel):
+	"""Inputs accepted by the parse-strategy API."""
+
+	prompt: str = Field(min_length=1)

@@ -2,13 +2,15 @@ import json
 
 from fastapi import APIRouter, HTTPException
 
-from api.schemas import BacktestRequest, BacktestResponse, StrategySummary
+from api.schemas import BacktestRequest, BacktestResponse, PromptRequest, StrategySummary
 from engine.backtest import Backtest
 from engine.backtest_config import BacktestConfig
 from engine.data.loader import DataLoader
 from engine.strategy.examples.mockstrategy import Mockstrategy
 from engine.strategy.examples.presets import get_strategy_preset, list_strategy_presets
 from engine.strategy.strategy_executor import StrategyExecutor
+from engine.strategy.strategy_schema import StrategySchema
+from services import strategy_generator
 
 
 router = APIRouter(prefix="/api/backtests", tags=["backtests"])
@@ -26,8 +28,14 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 		raise HTTPException(status_code=422, detail="start_date must be before end_date")
 
 	try:
-		preset = get_strategy_preset(request.strategy)
-		strategy = Mockstrategy() if preset["kind"] == "mock" else StrategyExecutor(preset["strategy"])
+		if isinstance(request.strategy, StrategySchema):
+			strategy = StrategyExecutor(request.strategy.model_dump())
+			strategy_name = request.strategy.name
+		else:
+			preset = get_strategy_preset(request.strategy)
+			strategy = Mockstrategy() if preset["kind"] == "mock" else StrategyExecutor(preset["strategy"])
+			strategy_name = request.strategy
+
 		config = BacktestConfig(
 			strategy=strategy,
 			symbol=request.symbol.upper(),
@@ -48,7 +56,7 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 
 	return BacktestResponse(
 		symbol=config.symbol,
-		strategy=request.strategy,
+		strategy=strategy_name,
 		start_date=result.start_date,
 		end_date=result.end_date,
 		metrics=metrics,
@@ -57,3 +65,7 @@ def run_backtest(request: BacktestRequest) -> BacktestResponse:
 		portfolio_values=[float(value) for value in backtest.portfolio_value],
 		performance_chart=performance_chart,
 	)
+
+@router.post("/generateStrategy", response_model=StrategySchema)
+def generate_strategy(prompt_request: PromptRequest) -> StrategySchema:
+	return strategy_generator.generate_strategy(prompt=prompt_request.prompt)
