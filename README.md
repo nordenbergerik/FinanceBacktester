@@ -8,6 +8,7 @@ A modular Python backtesting platform with a FastAPI service and a lightweight b
 - Pydantic validation for API requests, strategy definitions, dates, symbols, and capital.
 - Historical data loaded through `yfinance`, normalized into validated OHLCV data, and aligned with an S&P 500 benchmark.
 - Strategy presets for price momentum, RSI mean reversion, SMA trend following, and EMA momentum.
+- AI-generated strategies validated against the same strategy schema and executed by the backtest engine.
 - Performance metrics including buy-and-hold return, CAGR, Sharpe and Sortino ratios, maximum drawdown, alpha, beta, and Calmar ratio.
 - Interactive Plotly performance chart comparing the stock, S&P 500 benchmark, and strategy cumulative returns.
 - FastAPI endpoints with CORS support for the static frontend.
@@ -48,6 +49,8 @@ The frontend loads the available strategies from the backend at runtime:
 
 Strategies using indicator conditions are validated by `StrategySchema` and executed by `StrategyExecutor`. This makes it possible to add new presets without changing the API or frontend contract.
 
+The strategy schema only permits supported indicators (`PRICE`, `SMA`, `EMA`, `RSI`, `MACD`, and the Bollinger bands) and comparison operators (`<`, `>`, `==`, `<=`, `>=`). Indicator parameters are constrained to the fields understood by the executor: `period`, `fast_period`, `slow_period`, `signal_period`, `num_std_dev`, and `component`. Unsupported fields are rejected.
+
 ## API
 
 Start a backtest with `POST /api/backtests`:
@@ -64,7 +67,14 @@ Start a backtest with `POST /api/backtests`:
 
 Available strategies are returned by `GET /api/backtests/strategies`. A health check is available at `GET /health`, and interactive API documentation is served at `/docs`.
 
-To run a generated strategy, first send a prompt to `POST /api/backtests/generateStrategy`. Put the returned strategy object in the `strategy` field of `POST /api/backtests`:
+### Run a generated strategy
+
+The AI Studio flow has two steps:
+
+1. Send `{"prompt": "Buy when RSI is below 30 and sell when RSI is above 70"}` to `POST /api/backtests/generateStrategy`. The endpoint returns a strategy object validated against `StrategySchema`.
+2. Send the usual backtest inputs to `POST /api/backtests`, passing that returned object as the `strategy` value.
+
+For example:
 
 ```json
 {
@@ -108,7 +118,17 @@ To run a generated strategy, first send a prompt to `POST /api/backtests/generat
 }
 ```
 
-`strategy` can still be a preset ID such as `"rsi_mean_reversion"`; when it is an object, it is validated and run as a custom strategy.
+`strategy` can be a preset ID such as `"rsi_mean_reversion"` or a generated strategy object. When an object is supplied, the API validates it and runs it through `StrategyExecutor`.
+
+The browser UI follows the same flow: generate a strategy in **AI Studio**, then open **Configuration** and select **Run generated strategy**. The generated strategy is kept in browser `localStorage` for that site origin.
+
+The strategy generator reads the API key from the backend environment variable `OPENAI_API_KEY`. For local development, create a `.env` file in the project root (keep it out of version control) containing:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+```
+
+Restart the backend after adding or changing the key. Never put the key in frontend code or send it to the browser.
 
 The backtest response includes:
 
@@ -142,7 +162,7 @@ The `start-app` command launches both the FastAPI server and the static frontend
 python -m pytest -q
 ```
 
-The test suite covers API request validation and response serialization, data models and loading, indicator calculations, strategy execution, backtest portfolio behavior, chart output, and metrics. The current suite contains 56 passing tests.
+The test suite covers API request validation and response serialization, data models and loading, indicator calculations, strategy execution, backtest portfolio behavior, chart output, and metrics.
 
 ## Project Structure
 
