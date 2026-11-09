@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f5f2ea">
-    <title>Finance Backtester</title>
+    <meta name="theme-color" content="#f5f7f3">
+    <title>Backtests — Finance Backtester</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
@@ -18,78 +16,162 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand"><span class="brand-mark">F</span><span>Finance Backtester</span></div>
-            <div class="eyebrow">Backtest engine</div>
+            <a class="brand" href="index.html" aria-label="Finance Backtester home">
+                <span class="brand-mark" aria-hidden="true">F</span>
+                <span class="brand-name">Finance<span>Backtester</span></span>
+            </a>
+
+            <div class="sidebar-section-label">Workspace</div>
             <nav class="nav-list" aria-label="Primary navigation">
-                <a class="nav-item active" href="#run"><span class="nav-icon">↗</span>Configuration</a>
-                <a class="nav-item" href="ai-studio.html"><span class="nav-icon">↗</span>AI Studio</a>
+                <a class="nav-item active" href="index.html" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">⌁</span>Backtest
+                </a>
+                <a class="nav-item" href="ai-studio.html">
+                    <span class="nav-icon" aria-hidden="true">✳</span>AI Studio
+                    <span class="nav-tag">BETA</span>
+                </a>
             </nav>
-            <div class="sidebar-foot">
-                <div class="system-label"><span class="status-dot"></span>Engine ready</div>
-                <p>Backtests are submitted to the local FastAPI engine.</p>
+
+            <div class="sidebar-card">
+                <span class="sidebar-card-icon" aria-hidden="true">↗</span>
+                <p>Make every market move measurable.</p>
+                <span>Test your edge against the S&amp;P 500.</span>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="engine-status">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span id="sidebar-api-status">Checking engine</span>
+                </div>
+                <p>Connected to your local backtest engine.</p>
             </div>
         </aside>
 
         <main class="main-content">
             <header class="topbar">
-                <div><span class="breadcrumb">FINANCE / BACKTESTS</span>
-                    <h1>Finance backtester.</h1>
-                </div>
-                <div class="topbar-actions"><span class="live-pill"><span class="pulse"></span>API connected</span>
+                <div class="breadcrumb"><span>WORKSPACE</span><span class="breadcrumb-slash">/</span>BACKTEST</div>
+                <div class="topbar-actions">
+                    <span class="live-pill" id="api-status" data-state="checking">
+                        <span class="pulse" aria-hidden="true"></span><span>Checking API</span>
+                    </span>
+                    <span class="topbar-date" id="today-date"></span>
                 </div>
             </header>
+
+            <section class="page-intro">
+                <div>
+                    <p class="eyebrow">YOUR RESEARCH WORKSPACE</p>
+                    <h1>Find your edge<span class="heading-period">.</span></h1>
+                    <p class="page-subtitle">Build a strategy, put it to the test, and see how it stacks up.</p>
+                </div>
+                <a class="text-link" href="ai-studio.html"><span>✳</span> Create with AI <span aria-hidden="true">↗</span></a>
+            </section>
 
             <section class="workspace-grid" id="run">
                 <section class="control-panel panel">
                     <div class="section-heading">
-                        <div><span class="kicker">01 / configure</span>
-                            <h2>Run a new backtest</h2>
-                        </div><span class="step-number">01</span>
-                    </div>
-                    <form id="backtest-form">
-                        <label class="field-label" for="symbol">Asset</label>
-                        <div class="symbol-field"><span>$</span><input id="symbol" name="symbol" value="AAPL"
-                                maxlength="15" autocomplete="off"><span class="exchange">NASDAQ</span></div>
-                        <div class="field-row">
-                            <div><label class="field-label" for="start-date">Start date</label><input class="text-input"
-                                    type="date" id="start-date" name="start-date" value="2019-01-01"></div>
-                            <div><label class="field-label" for="end-date">End date</label><input class="text-input"
-                                    type="date" id="end-date" name="end-date" value="2024-01-01"></div>
+                        <div>
+                            <span class="section-index">01 <span>/</span> CONFIGURE</span>
+                            <h2>Set up your test</h2>
                         </div>
+                        <span class="step-badge">01</span>
+                    </div>
+
+                    <form id="backtest-form">
+                        <label class="field-label" for="symbol">Ticker symbol</label>
+                        <div class="symbol-field">
+                            <span class="input-prefix" aria-hidden="true">$</span>
+                            <input id="symbol" name="symbol" value="AAPL" maxlength="8" autocomplete="off" required aria-label="Ticker symbol">
+                            <span class="input-suffix">US EQUITY</span>
+                        </div>
+
+                        <div class="field-row">
+                            <div>
+                                <label class="field-label" for="start-date">From</label>
+                                <input class="text-input" type="date" id="start-date" name="start-date" value="2019-01-01" required>
+                            </div>
+                            <div>
+                                <label class="field-label" for="end-date">To</label>
+                                <input class="text-input" type="date" id="end-date" name="end-date" value="2024-01-01" required>
+                            </div>
+                        </div>
+
                         <label class="field-label" for="capital">Starting capital</label>
-                        <div class="money-field"><span>$</span><input id="capital" name="capital" type="number"
-                                min="100" step="100" value="10000"><span class="currency">USD</span></div>
-                        <label class="field-label" for="strategy-select">Strategy implementation</label>
+                        <div class="money-field">
+                            <span class="input-prefix" aria-hidden="true">$</span>
+                            <input id="capital" name="capital" type="number" min="100" step="100" value="10000" required>
+                            <span class="input-suffix">USD</span>
+                        </div>
+
+                        <label class="field-label" for="strategy-select">Strategy</label>
                         <select class="text-input select-input" id="strategy-select" name="strategy">
                             <option value="mock">Mockstrategy</option>
                             <option value="rsi_mean_reversion">RSI mean reversion</option>
                             <option value="sma_trend">SMA trend</option>
                             <option value="ema_momentum">EMA momentum</option>
                         </select>
-                        <div class="strategy-note"><span class="note-icon">i</span><span
-                                id="strategy-description">Two-day price momentum example strategy.</span></div>
-                        <button class="run-button" type="submit" name="action" value="runStrategy"><span>Run backtest</span><span
-                                class="button-arrow">↗</span></button>
 
-                        <button class="run-button" id="run-generated-button" type="submit" name="action" value="runGeneratedStrategy"><span>Run generated strategy</span><span
-                                class="button-arrow">↗</span></button>
+                        <div class="strategy-note">
+                            <span class="note-icon" aria-hidden="true">i</span>
+                            <span id="strategy-description">Two-day price momentum example strategy.</span>
+                        </div>
 
-                        <p class="form-hint">Daily candles · S&amp;P 500 benchmark is used by the engine.</p>
+                        <div class="form-actions">
+                            <button class="run-button" id="run-backtest-button" type="submit" name="action" value="runStrategy">
+                                <span>Run backtest</span><span class="button-arrow" aria-hidden="true">↗</span>
+                            </button>
+                            <button class="run-button run-button-secondary" id="run-generated-button" type="submit" name="action" value="runGeneratedStrategy">
+                                <span>Run saved AI strategy</span><span class="button-arrow" aria-hidden="true">✳</span>
+                            </button>
+                        </div>
+                        <p class="form-hint"><span class="hint-dot" aria-hidden="true"></span>Daily candles <span>·</span> S&amp;P 500 benchmark</p>
                     </form>
                 </section>
-                <section class="results-area panel unavailable-panel" id="results">
-                    <span class="kicker">02 / results</span>
-                    <h2 id="result-title">Run a backtest to see results</h2>
-                    <p id="result-status">Results are calculated by the backend and will appear here.</p>
-                    <div id="performance-chart"></div>
+
+                <section class="results-area panel" id="results" aria-live="polite">
+                    <div class="results-header">
+                        <div>
+                            <span class="section-index">02 <span>/</span> RESULTS</span>
+                            <h2 id="result-title">Your next insight starts here</h2>
+                            <p id="result-status" class="result-status">Configure a backtest to explore historical performance.</p>
+                        </div>
+                        <span class="results-symbol" id="result-symbol" hidden></span>
+                    </div>
+
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-chart" aria-hidden="true">
+                            <span class="chart-grid-line line-one"></span>
+                            <span class="chart-grid-line line-two"></span>
+                            <svg viewBox="0 0 640 180" role="presentation" focusable="false">
+                                <path class="chart-line chart-line-muted" d="M0 148 C35 143 45 132 75 139 S126 127 151 131 S187 110 214 121 S260 99 289 111 S333 93 364 106 S407 77 434 90 S481 71 509 81 S554 46 581 57 S613 33 640 39" />
+                                <path class="chart-line chart-line-accent" d="M0 157 C34 155 43 143 71 151 S121 135 150 142 S188 116 214 131 S261 121 288 125 S331 98 363 114 S406 91 434 101 S478 69 507 87 S551 60 581 68 S611 41 640 48" />
+                            </svg>
+                            <div class="empty-chart-label"><span></span> Your strategy <span class="chart-label-separator"></span> Benchmark</div>
+                        </div>
+                        <div class="empty-copy">
+                            <span class="empty-icon" aria-hidden="true">↗</span>
+                            <div>
+                                <strong>Performance, without the guesswork.</strong>
+                                <p>Your chart and key metrics will appear here after your first run.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="performance-chart" class="performance-chart" aria-label="Backtest performance chart"></div>
                     <div class="api-results" id="api-results" hidden>
+                        <div class="metrics-heading">
+                            <span>Performance metrics</span>
+                            <span id="price-count"></span>
+                        </div>
                         <div class="api-metrics" id="api-metrics"></div>
-                        <div class="price-summary"><span>Price series</span><strong id="price-count"></strong></div>
                     </div>
                 </section>
             </section>
-            <footer class="footer"><span>Finance Backtester / local workspace</span><span>Last calculated <strong
-                        id="footer-time">just now</strong></span></footer>
+
+            <footer class="footer">
+                <span><span class="footer-mark">F</span> Finance Backtester</span>
+                <span>Historical simulation <span class="footer-divider">·</span> Not investment advice</span>
+            </footer>
         </main>
     </div>
     <script src="app.js"></script>

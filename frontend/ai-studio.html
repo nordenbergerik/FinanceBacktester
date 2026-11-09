@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f5f2ea">
-    <title>Finance Backtester</title>
+    <meta name="theme-color" content="#f5f7f3">
+    <title>AI Studio — Finance Backtester</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="ai-studio.css">
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -20,42 +18,192 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand"><span class="brand-mark">F</span><span>Finance Backtester</span></div>
-            <div class="eyebrow">AI Studio</div>
+            <a class="brand" href="index.html" aria-label="Finance Backtester home">
+                <span class="brand-mark" aria-hidden="true">F</span>
+                <span class="brand-name">Finance<span>Backtester</span></span>
+            </a>
+
+            <div class="sidebar-section-label">Workspace</div>
             <nav class="nav-list" aria-label="Primary navigation">
-                <a class="nav-item active" href="index.html"><span class="nav-icon">↗</span>Configuration</a>
-                <a class="nav-item active" href="ai-studio.html"><span class="nav-icon">#</span>AI Studio</a>
+                <a class="nav-item" href="index.html">
+                    <span class="nav-icon" aria-hidden="true">⌁</span>Backtest
+                </a>
+                <a class="nav-item active" href="ai-studio.html" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">✳</span>AI Studio
+                    <span class="nav-tag">BETA</span>
+                </a>
             </nav>
-            <div class="sidebar-foot">
-                <div class="system-label"><span class="status-dot"></span>Engine ready</div>
-                <p>Backtests are submitted to the local FastAPI engine.</p>
+
+            <div class="sidebar-card">
+                <span class="sidebar-card-icon" aria-hidden="true">✳</span>
+                <p>From an idea to a testable strategy.</p>
+                <span>Describe your rules in plain language.</span>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="engine-status">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span id="sidebar-api-status">Checking engine</span>
+                </div>
+                <p>Your strategy stays in this browser.</p>
             </div>
         </aside>
 
         <main class="main-content">
             <header class="topbar">
-                <div><span class="breadcrumb">FINANCE / AI Studio</span>
-                    <h1>AI Studio.</h1>
-                </div>
+                <div class="breadcrumb"><span>WORKSPACE</span><span class="breadcrumb-slash">/</span>AI STUDIO</div>
                 <div class="topbar-actions">
-                    <span class="live-pill"><span class="pulse"></span>API connected</span>
+                    <span class="live-pill" id="api-status" data-state="checking">
+                        <span class="pulse" aria-hidden="true"></span><span>Checking API</span>
+                    </span>
+                    <span class="topbar-date" id="today-date"></span>
                 </div>
             </header>
 
+            <section class="page-intro ai-page-intro">
+                <div>
+                    <p class="eyebrow">STRATEGY WORKSHOP <span class="beta-chip">BETA</span></p>
+                    <h1>Think it. <span class="title-highlight">Test it.</span></h1>
+                    <p class="page-subtitle">Turn a trading idea into clear rules you can backtest.</p>
+                </div>
+                <a class="text-link backtest-link" href="index.html"><span>⌁</span> Backtest workspace <span aria-hidden="true">↗</span></a>
+            </section>
 
-            <form class="strategy-chat-container" id="strategy-form">
-                <h3>Create a strategy with AI</h3>
+            <section class="ai-workspace">
+                <form class="prompt-panel panel" id="strategy-form">
+                    <div class="section-heading">
+                        <div>
+                            <span class="section-index">01 <span>/</span> YOUR IDEA</span>
+                            <h2>Describe your strategy</h2>
+                        </div>
+                        <span class="step-badge">✳</span>
+                    </div>
 
-                <label for="strategyInput">Describe your strategy</label>
-                <textarea id="strategyInput" name="prompt" rows="5"
-                    placeholder="Buy when RSI is under 30 and sell when it's over 70..."></textarea>
+                    <label class="sr-only" for="strategyInput">Describe your strategy</label>
+                    <textarea id="strategyInput" name="prompt" rows="6" maxlength="1000" required
+                        placeholder="For example: Buy when the 20-day EMA crosses above the 50-day EMA. Sell when it crosses below."></textarea>
 
-                <button id="generateBtn" type="submit">Generate strategy</button>
-                <p id="ai-status" role="status"></p>
-            </form>
+                    <div class="prompt-footer">
+                        <span>Be specific about your entry and exit conditions.</span>
+                        <span id="prompt-count">0 / 1000</span>
+                    </div>
+
+                    <div class="suggestions">
+                        <span class="suggestions-label">TRY AN EXAMPLE</span>
+                        <div class="suggestion-list">
+                            <button class="suggestion-chip" type="button" data-prompt="Buy when RSI is below 30 and sell when RSI rises above 70.">RSI mean reversion <span aria-hidden="true">↗</span></button>
+                            <button class="suggestion-chip" type="button" data-prompt="Buy when price closes above its 200-day SMA and sell when it closes below.">200-day trend <span aria-hidden="true">↗</span></button>
+                            <button class="suggestion-chip" type="button" data-prompt="Buy when the 20-day EMA crosses above the 50-day EMA. Sell when it crosses below.">EMA crossover <span aria-hidden="true">↗</span></button>
+                        </div>
+                    </div>
+
+                    <button class="run-button generate-button" id="generateBtn" type="submit">
+                        <span class="generate-button-icon" aria-hidden="true">✳</span>
+                        <span>Generate strategy</span>
+                        <span class="button-arrow" aria-hidden="true">↗</span>
+                    </button>
+                    <p id="ai-status" class="ai-status" role="status" aria-live="polite"></p>
+                    <p class="privacy-note"><span aria-hidden="true">◇</span> API keys stay on your backend. Your strategy is saved only in this browser.</p>
+                </form>
+
+                <aside class="guide-panel">
+                    <div class="guide-icon" aria-hidden="true">✳</div>
+                    <span class="section-index">A BETTER PROMPT</span>
+                    <h2>Define the rules, not just the idea.</h2>
+                    <p>Clear conditions help the engine turn your concept into a strategy you can actually evaluate.</p>
+                    <div class="guide-steps">
+                        <div><span>01</span><p><strong>When to enter</strong><small>What signals a buy?</small></p></div>
+                        <div><span>02</span><p><strong>When to exit</strong><small>What closes the position?</small></p></div>
+                        <div><span>03</span><p><strong>Choose an indicator</strong><small>Use one from the reference below.</small></p></div>
+                    </div>
+                    <div class="guide-footnote"><span aria-hidden="true">i</span> AI-generated strategies should be reviewed before use.</div>
+                </aside>
+            </section>
+
+            <section class="indicator-library panel" aria-labelledby="indicator-heading">
+                <div class="indicator-library-heading">
+                    <div>
+                        <span class="section-index">REFERENCE <span>/</span> STRATEGY RULES</span>
+                        <h2 id="indicator-heading">Available indicators</h2>
+                        <p>These are the values you can use in entry and exit conditions. They are different from the performance metrics shown after a backtest.</p>
+                    </div>
+                    <span class="indicator-count">6 TYPES</span>
+                </div>
+
+                <div class="indicator-grid">
+                    <article class="indicator-card">
+                        <span class="indicator-code">PRICE</span>
+                        <h3>Adjusted close</h3>
+                        <p>Compare the asset's adjusted closing price against a value or moving average.</p>
+                    </article>
+                    <article class="indicator-card">
+                        <span class="indicator-code">SMA</span>
+                        <h3>Simple moving average</h3>
+                        <p>Average price over a rolling window.</p>
+                        <span class="indicator-params">Parameter: period</span>
+                    </article>
+                    <article class="indicator-card">
+                        <span class="indicator-code">EMA</span>
+                        <h3>Exponential moving average</h3>
+                        <p>Moving average with more weight on recent prices.</p>
+                        <span class="indicator-params">Parameter: period</span>
+                    </article>
+                    <article class="indicator-card">
+                        <span class="indicator-code">RSI</span>
+                        <h3>Relative strength index</h3>
+                        <p>Momentum oscillator commonly interpreted on a 0–100 scale.</p>
+                        <span class="indicator-params">Parameter: period</span>
+                    </article>
+                    <article class="indicator-card">
+                        <span class="indicator-code">MACD</span>
+                        <h3>Moving average convergence/divergence</h3>
+                        <p>Compare the MACD line, signal line, or histogram.</p>
+                        <span class="indicator-params">Parameters: fast_period, slow_period, signal_period, component</span>
+                    </article>
+                    <article class="indicator-card">
+                        <span class="indicator-code">BOLLINGER</span>
+                        <h3>Bollinger bands</h3>
+                        <p>Compare price with the upper, middle, or lower band.</p>
+                        <span class="indicator-params">Indicators: BOLLINGER_UPPER, BOLLINGER_MIDDLE, BOLLINGER_LOWER · Parameters: period, num_std_dev</span>
+                    </article>
+                </div>
+
+                <div class="operator-reference">
+                    <span class="operator-label">Comparison operators</span>
+                    <div class="operator-list" aria-label="Available comparison operators">
+                        <code>&lt;</code><code>&gt;</code><code>&lt;=</code><code>&gt;=</code><code>==</code>
+                    </div>
+                    <span class="operator-note">Conditions can be combined with AND or OR.</span>
+                </div>
+            </section>
+
+            <section class="generated-panel panel" id="generated-preview" aria-live="polite" hidden>
+                <div class="generated-heading">
+                    <div>
+                        <span class="section-index">02 <span>/</span> STRATEGY PREVIEW</span>
+                        <h2 id="generated-name"></h2>
+                    </div>
+                    <span class="generated-badge"><span aria-hidden="true">✓</span> Ready to backtest</span>
+                </div>
+                <p class="generated-description" id="generated-description"></p>
+                <div class="rule-grid">
+                    <article class="rule-card">
+                        <span class="rule-type entry-type"><span aria-hidden="true">↗</span> ENTRY RULES</span>
+                        <div id="entry-rules"></div>
+                    </article>
+                    <article class="rule-card">
+                        <span class="rule-type exit-type"><span aria-hidden="true">↘</span> EXIT RULES</span>
+                        <div id="exit-rules"></div>
+                    </article>
+                </div>
+                <a class="run-button preview-link" href="index.html">
+                    <span>Configure a backtest</span><span class="button-arrow" aria-hidden="true">↗</span>
+                </a>
+            </section>
 
             <footer class="footer">
-                <span>Finance Backtester / local workspace</span>
+                <span><span class="footer-mark">F</span> Finance Backtester</span>
+                <span>Generated rules are saved locally <span class="footer-divider">·</span> Review before use</span>
             </footer>
         </main>
     </div>
